@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'user_auth',
     'leads',
+    'kyc',
 ]
 
 MIDDLEWARE = [

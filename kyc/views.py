@@ -4,44 +4,41 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from utils import response_data
-from user_auth.models import User
-from .models import Leads
-from .serializers import LeadsSerializer
+from leads.models import Leads
+from .models import KYCDetails
+from .serializers import KycDetailsSerializer
 
-class LeadView(APIView):
-    serializer_class = LeadsSerializer
+class KYCVIew(APIView):
+    serializer_class = KycDetailsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Leads.objects.all()
+    queryset = KYCDetails.objects.all()
 
-    def get_lead(self, lead_id):
+    def get_kyc_object(self, pk):
         try:
-            return self.queryset.get(lead_id=lead_id)
-        except Leads.DoesNotExist:
+            return self.queryset.get(pk=pk)
+        except KYCDetails.DoesNotExist:
             return None
     
     def post(self, request):
-        if User.objects.filter(email=request.user.email).exists():  
-            user = User.objects.get(email=request.user.email, user_type = 'ro')
+        lead_id = request.data.get('lead_id')
+        if Leads.objects.filter(lead_id=lead_id).exists():  
+            lead_obj = Leads.objects.get(lead_id=lead_id)
         else:
             return Response(
-                response_data(True, "User not found"), status.HTTP_400_BAD_REQUEST
+                response_data(True, "Lead not found"), status.HTTP_400_BAD_REQUEST
             )
         
         data = request.data.copy()
-        new_data = {}
-        for field in ["gender", "first_name", "last_name"]:
+        for field in ["first_name", "last_name"]:
             if request.data.get(field):
-                new_data[field] = (
-                    request.data[field].lower()
-                    if field == "gender"
-                    else request.data[field].capitalize()
-                )
-        data['assigned_to'] = user.pk
+                data[field] = request.data[field].capitalize()
+                
+        data['lead'] = lead_obj.pk
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(
-                response_data(False, "Lead created successfully", serializer.data),
+                response_data(False, "KYC created successfully", serializer.data),
                 status=status.HTTP_200_OK,
             )
         else:
@@ -52,15 +49,16 @@ class LeadView(APIView):
 
     def get(self, request):
         try:
-            leads = self.queryset.filter(assigned_to__email = request.user.email)
-            if leads:
-                serializer = self.serializer_class(leads, many=True)
+            lead_id = request.query_params.get('lead_id')
+            kyc_objs = self.queryset.filter(lead__lead_id = lead_id)
+            if kyc_objs:
+                serializer = self.serializer_class(kyc_objs, many=True)
                 return Response(
-                    response_data(False, "User found.", serializer.data), status.HTTP_200_OK
+                    response_data(False, "Sucess", serializer.data), status.HTTP_200_OK
                 )
             else:
                 return Response(
-                response_data(True, "Does not contains any lead for this user."), status.HTTP_200_OK
+                response_data(True, "Does not contains any KYC details for this lead."), status.HTTP_200_OK
             )
         except Exception as e:
             return Response(
@@ -68,12 +66,13 @@ class LeadView(APIView):
             )
         
     def put(self, request):
+        import pdb;pdb.set_trace()
         try:
-            lead_id = request.query_params.get('lead_id')
-            lead_obj = self.get_lead(lead_id)
+            kyc_id = request.query_params.get('kyc_id')
+            kyc_obj = self.get_kyc_object(kyc_id)
 
-            if lead_obj:
-                serializer = self.serializer_class(lead_obj, request.data, partial=True)
+            if kyc_obj:
+                serializer = self.serializer_class(kyc_obj, request.data, partial=True)
                 if serializer.is_valid():
                     serializer.save()
                     return Response(
@@ -87,7 +86,7 @@ class LeadView(APIView):
                     )
             else:
                 return Response(
-                        response_data(True, "Lead Object Not Found."),
+                        response_data(True, "Kyc Object Not Found."),
                         status=status.HTTP_200_OK,
                     )
         except Exception as e:
@@ -98,7 +97,7 @@ class LeadView(APIView):
 
     def delete(self, request):
         lead_id = request.query_params.get('lead_id')
-        lead_obj = self.get_lead(lead_id)
+        lead_obj = self.get_kyc_object(lead_id)
         if lead_obj :
             if not request.user.is_superuser:
                 return Response(

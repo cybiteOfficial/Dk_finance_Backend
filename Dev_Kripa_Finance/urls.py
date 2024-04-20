@@ -25,6 +25,7 @@ urlpatterns = [
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('auth/', include('user_auth.urls')),
     path('api/v1/', include('leads.urls')),
+    path('api/v1/',include('kyc.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

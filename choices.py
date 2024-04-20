@@ -38,8 +38,8 @@ class Choices:
     ]
 
     DOCUMENT_TYPE_CHOICES = [
-        (),
-        ()
+        ('kyc', 'KYC'),
+        ('other', 'Other')
     ]
 
     VERIFICATION_TYPE_CHOICES = [
