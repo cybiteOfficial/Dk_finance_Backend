@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from user_auth.models import User
+from django.contrib.auth.models import Group, Permission
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,7 +12,19 @@ class UserSerializer(serializers.ModelSerializer):
         representation = super(UserSerializer, self).to_representation(instance)
         representation['bank_branch'] = instance.bank_branch.bank_name
         return representation
-    
+
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = '__all__'
+
+class GroupSerializer(serializers.ModelSerializer):
+    permissions = PermissionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = '__all__'
+
 class SignInSerializer(serializers.Serializer):
     email = serializers.CharField()
     password = serializers.CharField(write_only=True)

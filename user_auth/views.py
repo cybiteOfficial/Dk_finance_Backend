@@ -1,11 +1,12 @@
-from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
-from .utils import response_data, OauthGetToken
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model, authenticate
+
+from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
+from utils import response_data, OauthGetToken
 
 class SignUpView(APIView):
     permission_classes = (AllowAny,)
@@ -132,7 +133,6 @@ class UserView(APIView):
             )
 
     def delete(self, request):
-        import pdb;pdb.set_trace()
         pk = request.query_params.get("pk")
         user_obj = self.get_user(pk)
         if user_obj :

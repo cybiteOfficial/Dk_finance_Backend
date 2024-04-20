@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-import requests, base64
+import requests, base64, random, string
 
 from constant import Constants
 
@@ -24,3 +24,14 @@ def OauthGetToken(username, password):
     }
     response = requests.post(url, data= payload, headers= headers)
     return response, response.status_code
+
+def generate_leadID(length=6):
+    """Generate a random Lead_id of specified length."""
+
+    lead_id = "ld_" + "".join(random.choices(string.digits, k=length))
+    return lead_id
+
+
+def generate_random_string(length=10):
+    letters = string.ascii_letters + string.digits
+    return "".join(random.choice(letters) for _ in range(length))

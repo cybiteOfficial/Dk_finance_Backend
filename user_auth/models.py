@@ -1,18 +1,11 @@
-import random
-import string
 import uuid
 
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from phonenumber_field.modelfields import PhoneNumberField
-from user_auth.validators import validate_otp_length
-
-
-def generate_random_string(length=10):
-    letters = string.ascii_letters + string.digits
-    return "".join(random.choice(letters) for _ in range(length))
-
+from validators import validate_otp_length
+from choices import Choices
 
 class BaseModel(models.Model):
     class Meta:
@@ -26,17 +19,11 @@ class BaseModel(models.Model):
 class PersonDetails(models.Model):
     class Meta:
         abstract = True
-    
-    GENDER_CHOICES = [
-        ('male', 'Male'),
-        ('female', 'Female'),
-        ('other', 'Other'),
-    ]
-    
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
+    gender = models.CharField(max_length=10, choices=Choices.GENDER_CHOICES, blank=True)
     phone_number = PhoneNumberField(blank=True, null=True)
 
 
@@ -76,17 +63,10 @@ class CustomUserManager(BaseUserManager):
     
 
 class User(BaseModel, AbstractUser, PersonDetails):
-    USER_TYPE_CHOICES = [
-        ("ro", "Ro"), 
-        ("do", "Do"), 
-        ("technicalofficer", "Technicalofficer"), 
-        ("bm", "Bm"),
-        ("md", "MD"),
-        ("cluster", "Cluster")
-    ]
+    
     username =  models.CharField(max_length=250)
     email = models.EmailField(max_length=100, unique=True)
-    user_type = models.CharField(max_length=250, choices=USER_TYPE_CHOICES)
+    user_type = models.CharField(max_length=250, choices=Choices.USER_TYPE_CHOICES)
     profile_picture = models.ImageField(
         upload_to="profile_pictures/", blank=True, null=True
     )
@@ -108,3 +88,8 @@ class User(BaseModel, AbstractUser, PersonDetails):
 
     class Meta:
         db_table = "User"
+        permissions = [
+            ("can_view", "Can view"),
+            ("can_change", "Can change"),
+            ("can_delete", "Can delete"),
+        ]   

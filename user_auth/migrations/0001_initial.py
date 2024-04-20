@@ -6,7 +6,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 import phonenumber_field.modelfields
-import user_auth.validators
+import validators
 import uuid
 
 
@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
                 ('email', models.EmailField(max_length=100, unique=True)),
                 ('user_type', models.CharField(choices=[('ro', 'Ro'), ('do', 'Do'), ('technicalofficer', 'Technicalofficer'), ('bm', 'Bm'), ('md', 'MD'), ('cluster', 'Cluster')], max_length=250)),
                 ('profile_picture', models.ImageField(blank=True, null=True, upload_to='profile_pictures/')),
-                ('otp', models.IntegerField(blank=True, null=True, validators=[user_auth.validators.validate_otp_length])),
+                ('otp', models.IntegerField(blank=True, null=True, validators=[validators.validate_otp_length])),
                 ('aadhar_number', models.CharField(blank=True, max_length=12, null=True)),
                 ('is_staff', models.BooleanField(default=False)),
                 ('is_active', models.BooleanField(default=True)),
