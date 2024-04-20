@@ -4,7 +4,7 @@ import uuid
 
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from phonenumber_field.modelfields import PhoneNumberField
 from user_auth.validators import validate_otp_length
 
@@ -35,7 +35,6 @@ class PersonDetails(models.Model):
     
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100, unique=True)
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
     phone_number = PhoneNumberField(blank=True, null=True)
@@ -53,6 +52,28 @@ class BankDetails(BaseModel):
     pincode = models.CharField(max_length=20)
     currency = models.CharField(max_length=10, default="INR")
 
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+        
+        return self.create_user(email, password, **extra_fields)
+    
 
 class User(BaseModel, AbstractUser, PersonDetails):
     USER_TYPE_CHOICES = [
@@ -77,24 +98,13 @@ class User(BaseModel, AbstractUser, PersonDetails):
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
 
+    objects = CustomUserManager()
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ['username']
 
     def __str__(self) -> str:
         return self.username
-
-    def save(self, *args, **kwargs):
-        UserModel = get_user_model()
-        if not self.username:
-            self.username = self.email.split("@")[0]
-
-            try:
-                UserModel.objects.get(username=self.username)
-                self.username = generate_random_string()
-            except Exception:
-                pass
-
-        super().save(*args, **kwargs)
 
     class Meta:
         db_table = "User"
