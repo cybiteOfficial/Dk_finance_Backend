@@ -51,3 +51,9 @@ class Choices:
         (),
         ()
     ]
+
+    PAYMENT_STATUS = [
+        ('done', 'DONE'),
+        ('pending', 'PENDING'), 
+        ('failed', 'FAILED')
+    ]

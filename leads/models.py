@@ -21,6 +21,10 @@ class Leads(BaseModel):
     customer_type = models.CharField(max_length=255, choices=Choices.CUSTOMER_TYPE_CHOICES, default='home_loan')
     source = models.CharField(max_length=255, choices=Choices.LEAD_SOURCE_TYPE, default='website')
 
+    is_active = models.BooleanField(default=True)
+
+    otp_verification = models.IntegerField(blank=True, null=True)
+
     def __str__(self) -> str:
         return self.lead_id
 

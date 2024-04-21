@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'user_auth',
     'leads',
     'kyc',
+    'phonepay',
 ]
 
 MIDDLEWARE = [
@@ -91,9 +92,9 @@ WSGI_APPLICATION = 'Dev_Kripa_Finance.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('PROJECT_DB_NAME','dev_kripa_finance_local'),
+        'NAME': os.environ.get('PROJECT_DB_NAME','dev_kripa'),
         'USER': os.environ.get('PROJECT_DB_USERNAME','postgres'),
-        'PASSWORD': os.environ.get('PROJECT_DB_PASSWORD','postgres'),
+        'PASSWORD': os.environ.get('PROJECT_DB_PASSWORD','root'),
         'HOST':os.environ.get('PROJECT_DB_HOST','localhost'),
         'PORT': os.environ.get('PROJECT_DB_PORT','5432')
     }

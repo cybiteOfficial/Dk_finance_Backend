@@ -26,6 +26,7 @@ urlpatterns = [
     path('auth/', include('user_auth.urls')),
     path('api/v1/', include('leads.urls')),
     path('api/v1/',include('kyc.urls')),
+    path('api/v1/phonepay/', include('phonepay.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,6 +3,11 @@ import requests, base64, random, string
 
 from constant import Constants
 
+from cryptography.hazmat.primitives import hashes
+from django.views.decorators.csrf import csrf_exempt
+from cryptography.hazmat.backends import default_backend
+import jsons
+
 def response_data(error, message, data=None):
     if data:
         return {"error": error, "data": data, "message": message}
@@ -35,3 +40,14 @@ def generate_leadID(length=6):
 def generate_random_string(length=10):
     letters = string.ascii_letters + string.digits
     return "".join(random.choice(letters) for _ in range(length))
+
+
+def calculate_sha256_string(input_string):
+    sha256 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+    sha256.update(input_string.encode('utf-8'))
+    return sha256.finalize().hex()
+
+def base64_encode(input_dict):
+    json_data = jsons.dumps(input_dict)
+    data_bytes = json_data.encode('utf-8')
+    return base64.b64encode(data_bytes).decode('utf-8')
