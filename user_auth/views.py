@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model, authenticate
 
-from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
+from .serializers import SignUpSerializer, SignInSerializer, UserSerializer, BankDetailsSerializer
 from utils import response_data, OauthGetToken
 
 class SignUpView(APIView):
@@ -23,7 +23,7 @@ class SignUpView(APIView):
                 )
 
         serializer = self.serializer_class(data=request.data)
-
+        
         if serializer.is_valid():
             serializer.save()
             return Response(
@@ -145,3 +145,12 @@ class UserView(APIView):
             return Response(response_data(False, "User Deleted."), status.HTTP_200_OK)
         else:
             return Response(response_data(True, "User not found."), status.HTTP_404_NOT_FOUND)
+
+
+class BankDetailsCreateAPIView(APIView):
+    def post(self, request):
+        serializer = BankDetailsSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(response_data(False, "Bank Added Successfully!"), status.HTTP_200_OK)
+        return Response(response_data(False, "Fail to add bank details"), status.HTTP_200_OK)

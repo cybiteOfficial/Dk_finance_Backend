@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from user_auth.models import User
 from django.contrib.auth.models import Group, Permission
+from .models import BankDetails
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -60,3 +61,9 @@ class SignUpSerializer(serializers.ModelSerializer):
         validated_data.pop("confirm_password")
         user = User.objects.create_user(**validated_data)
         return user
+    
+    
+class BankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BankDetails
+        fields = '__all__'

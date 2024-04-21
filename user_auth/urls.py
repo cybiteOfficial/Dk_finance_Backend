@@ -8,4 +8,6 @@ urlpatterns = [
 
     # User endpoints for CRUD
     path("user", views.UserView.as_view()),
+
+    path('bankdetails', views.BankDetailsCreateAPIView.as_view(), name='bankdetails_create'),
 ]
