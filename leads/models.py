@@ -2,7 +2,7 @@ from django.db import models
 from utils import generate_leadID
 from choices import Choices
 from phonenumber_field.modelfields import PhoneNumberField
-from user_auth.models import BaseModel, User
+from user_auth.models import BaseModel, User, Comments
 
 class Leads(BaseModel):
 
@@ -20,6 +20,8 @@ class Leads(BaseModel):
     case_tag = models.CharField(max_length=255, choices=Choices.CASE_TAG_CHOICES, default='normal')
     customer_type = models.CharField(max_length=255, choices=Choices.CUSTOMER_TYPE_CHOICES, default='home_loan')
     source = models.CharField(max_length=255, choices=Choices.LEAD_SOURCE_TYPE, default='website')
+    description = models.TextField(null=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
     def __str__(self) -> str:
         return self.lead_id

@@ -16,6 +16,9 @@ class BaseModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class Comments(BaseModel):
+    comment = models.TextField()
+
 class PersonDetails(models.Model):
     class Meta:
         abstract = True
@@ -38,6 +41,8 @@ class BankDetails(BaseModel):
     city = models.CharField(max_length=50)
     pincode = models.CharField(max_length=20)
     currency = models.CharField(max_length=10, default="INR")
+    description = models.TextField(null=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
 
 class CustomUserManager(BaseUserManager):
@@ -92,4 +97,4 @@ class User(BaseModel, AbstractUser, PersonDetails):
             ("can_view", "Can view"),
             ("can_change", "Can change"),
             ("can_delete", "Can delete"),
-        ]   
+        ]

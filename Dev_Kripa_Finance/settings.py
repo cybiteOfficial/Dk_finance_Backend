@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'user_auth',
     'leads',
     'kyc',
+    'applicants'
 ]
 
 MIDDLEWARE = [
