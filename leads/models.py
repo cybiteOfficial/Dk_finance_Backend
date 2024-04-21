@@ -7,7 +7,7 @@ from user_auth.models import BaseModel, User, Comments
 class Leads(BaseModel):
 
     lead_id = models.CharField(max_length=255, default=generate_leadID, unique=True)
-    assigned_to = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='leads')
+    assigned_to = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='leads', null=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100, null=True)
