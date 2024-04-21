@@ -2,7 +2,7 @@ import os
 from .base import *
 
 DEBUG = os.environ.get('DEBUG')
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['3.111.52.245']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',

@@ -147,3 +147,4 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", None)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
+ALLOWED_HOSTS = ['172.31.3.20']
