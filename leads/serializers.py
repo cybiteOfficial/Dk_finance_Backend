@@ -10,5 +10,6 @@ class LeadsSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         representation = super(LeadsSerializer, self).to_representation(instance)
-        representation['assigned_to'] = instance.assigned_to.email
+        if instance.assigned_to is not None:
+            representation['assigned_to'] = instance.assigned_to.email
         return representation
