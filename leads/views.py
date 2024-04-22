@@ -30,6 +30,7 @@ class LeadView(APIView):
             )
         
         data = request.data.copy()
+        data['mobile_number'] = '+91' + data['mobile_number']
         new_data = {}
         for field in ["gender", "first_name", "last_name"]:
             if request.data.get(field):
@@ -124,6 +125,7 @@ class LeadViewForWeb(APIView):
 
     def post(self, request):
         data = request.data.copy()
+        data['mobile_number'] = '+91' + data['mobile_number']
         new_data = {}
         for field in ["gender", "first_name", "last_name"]:
             if request.data.get(field):
