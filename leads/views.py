@@ -136,7 +136,7 @@ class LeadViewForWeb(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(
-                response_data(False, "Lead created successfully", serializer.data),
+                response_data(False, "Lead created successfully"),
                 status=status.HTTP_200_OK,
             )
         else:

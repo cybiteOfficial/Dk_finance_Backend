@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'user_auth',
     'leads',
     'kyc',
-    'applicants'
+    'applicants',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
 
 ROOT_URLCONF = 'Dev_Kripa_Finance.urls'
