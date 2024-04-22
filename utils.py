@@ -20,6 +20,7 @@ def OauthGetToken(username, password):
         "username": username,
         "password": password
     }
+    print("client ID : ", os.environ.get("CLIENT_ID"), ", Client secret: ",os.environ.get("CLIENT_SECRET") )
     credentials = f'{os.environ.get("CLIENT_ID")}:{os.environ.get("CLIENT_SECRET")}'
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
     headers = {
