@@ -8,6 +8,8 @@ from user_auth.models import User
 from .models import Leads
 from .serializers import LeadsSerializer
 
+from rest_framework import permissions
+
 class LeadView(APIView):
     serializer_class = LeadsSerializer
     permission_classes = (IsAuthenticated,)
@@ -109,3 +111,36 @@ class LeadView(APIView):
             return Response(response_data(False, "Lead Deleted."), status.HTTP_200_OK)
         else:
             return Response(response_data(True, "Lead object not found."), status.HTTP_200_OK)
+        
+
+# for website only 
+
+class LeadViewForWeb(APIView):
+    serializer_class = LeadsSerializer
+    queryset = Leads.objects.all()
+
+    authentication_classes = [] 
+    permission_classes = [permissions.AllowAny] 
+
+    def post(self, request):
+        data = request.data.copy()
+        new_data = {}
+        for field in ["gender", "first_name", "last_name"]:
+            if request.data.get(field):
+                new_data[field] = (
+                    request.data[field].lower()
+                    if field == "gender"
+                    else request.data[field].capitalize()
+                )
+        serializer = self.serializer_class(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                response_data(False, "Lead created successfully", serializer.data),
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                response_data(True, "Something went wrong", serializer.errors),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
