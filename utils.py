@@ -74,8 +74,14 @@ def generate_customerID(length=8):
 def generate_PaymentID(length=8):
     """Generate a random payment of specified length."""
 
-    customer_id = "pmt_" + "".join(random.choices(string.digits, k=length))
-    return customer_id
+    Payment_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    return Payment_id
+
+def generate_locanID(length=8):
+    """Generate a random payment of specified length."""
+
+    loan_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    return loan_id
 
 def generate_random_string(length=10):
     letters = string.ascii_letters + string.digits
