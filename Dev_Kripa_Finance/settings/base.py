@@ -44,7 +44,10 @@ INSTALLED_APPS = [
     'user_auth',
     'leads',
     'kyc',
-    'applicants'
+    'applicants',
+    'corsheaders',
+    'customer',
+    'phonepay',
 ]
 
 MIDDLEWARE = [
@@ -55,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
 
 ROOT_URLCONF = 'Dev_Kripa_Finance.urls'
@@ -147,3 +151,4 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", None)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
+ALLOWED_HOSTS = ['172.31.3.20']

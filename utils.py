@@ -5,6 +5,11 @@ from constant import Constants
 import boto3, os
 from dotenv import load_dotenv
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+
+import json
+
 load_dotenv()
 
 def response_data(error, message, data=None):
@@ -54,11 +59,34 @@ def generate_leadID(length=6):
     return lead_id
 
 def generate_applicationID(length=8):
-    """Generate a random Lead_id of specified length."""
+    """Generate a random applicante_id of specified length."""
 
-    lead_id = "app_" + "".join(random.choices(string.digits, k=length))
-    return lead_id
+    applicante_id = "app_" + "".join(random.choices(string.digits, k=length))
+    return applicante_id
+
+def generate_customerID(length=8):
+    """Generate a random customer_id of specified length."""
+
+    customer_id = "cif_" + "".join(random.choices(string.digits, k=length))
+    return customer_id
+
+
+def generate_PaymentID(length=8):
+    """Generate a random payment of specified length."""
+
+    customer_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    return customer_id
 
 def generate_random_string(length=10):
     letters = string.ascii_letters + string.digits
     return "".join(random.choice(letters) for _ in range(length))
+
+def calculate_sha256_string(input_string):
+    sha256 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+    sha256.update(input_string.encode('utf-8'))
+    return sha256.finalize().hex()
+
+def base64_encode(input_dict):
+    json_data = json.dumps(input_dict)
+    data_bytes = json_data.encode('utf-8')
+    return base64.b64encode(data_bytes).decode('utf-8')
