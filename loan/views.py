@@ -18,8 +18,8 @@ class LoanAPIView(APIView):
             loan_id = request.query_params.get('loan_id', None)
             
             if loan_id:
-                if self.queryset.filter(id=loan_id).exists():
-                    loan_obj = self.queryset.get(id=loan_id)
+                if self.queryset.filter(loan_id=loan_id).exists():
+                    loan_obj = self.queryset.get(loan_id=loan_id)
                     serializer = self.serializer_class(loan_obj)
                     return Response(
                         response_data(False, "Loan found", serializer.data),
@@ -46,20 +46,18 @@ class LoanAPIView(APIView):
 
     def post(self, request):
 
-        applicantion_id = request.data.get('applicantion_id')
+        data = request.data.copy()
 
-        applicant = Applicants.objects.get(application_id = applicantion_id)
+        application_id = request.query_params.get('application_id')
 
-        if applicant:
-            app_obj = Applicants.objects.get(application_id = applicantion_id)
+        if Applicants.objects.filter(application_id = application_id).exists():
+            applicant = Applicants.objects.get(application_id = application_id)
+            data['applicant'] = applicant.pk
         else:
             return Response(
-                response_data(True, "Applicant Not Found", serializer.errors),
-                status=status.HTTP_400_BAD_REQUEST,
+                response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
 
-        data = request.data
-        data['applicant'] = app_obj
         serializer = self.serializer_class(data=data)
         try:
             if serializer.is_valid():
@@ -81,7 +79,7 @@ class LoanAPIView(APIView):
 
     def put(self, request, loan_id):
         try:
-            loan_obj = self.queryset.get(id=loan_id)
+            loan_obj = self.queryset.get(loan_id=loan_id)
         except Loan.DoesNotExist:
             return Response(
                 response_data(True, "Loan not found."),
@@ -109,7 +107,7 @@ class LoanAPIView(APIView):
 
     def delete(self, request, loan_id):
         try:
-            loan_obj = self.queryset.get(id=loan_id)
+            loan_obj = self.queryset.get(loan_id=loan_id)
         except Loan.DoesNotExist:
             return Response(
                 response_data(True, "Loan not found."),

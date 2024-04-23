@@ -74,3 +74,8 @@ class Choices:
         ('in_progress', 'In progress'),
         ('approved', 'Approved'),
     ]
+    
+    IS_EXISTING_CHOICES = [
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    ]

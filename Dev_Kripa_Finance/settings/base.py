@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'customer',
     'phonepay',
     'loan',
+    'collateral_details',
 ]
 
 MIDDLEWARE = [

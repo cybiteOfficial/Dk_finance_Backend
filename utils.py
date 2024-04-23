@@ -83,6 +83,12 @@ def generate_locanID(length=8):
     loan_id = "pmt_" + "".join(random.choices(string.digits, k=length))
     return loan_id
 
+def generate_CollateralID(length=8):
+    """Generate a random payment of specified length."""
+
+    Collateral_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    return Collateral_id
+
 def generate_random_string(length=10):
     letters = string.ascii_letters + string.digits
     return "".join(random.choice(letters) for _ in range(length))

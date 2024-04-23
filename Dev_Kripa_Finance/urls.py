@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/v1/', include('applicants.urls')),
     path('api/v1/', include('phonepay.urls')),
     path('api/v1/', include('loan.urls')),
+    path('api/v1/', include('collateral_details.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
