@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     'leads',
     'kyc',
     'applicants',
-    'corsheaders'
+    'corsheaders',
+    'customer',
+    'phonepay',
 ]
 
 MIDDLEWARE = [
