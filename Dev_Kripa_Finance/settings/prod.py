@@ -2,7 +2,7 @@ import os
 from .base import *
 
 DEBUG = os.environ.get('DEBUG')
-ALLOWED_HOSTS = ['3.111.52.245', '*']
+ALLOWED_HOSTS = ['13.201.85.110', '*']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -13,4 +13,7 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT','5432')
     }
 }
+
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = ['*']
