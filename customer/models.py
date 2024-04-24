@@ -3,6 +3,7 @@ from user_auth.models import BaseModel
 from applicants.models import Applicants
 from utils import generate_customerID
 from choices import Choices
+from user_auth.models import Comments
 
 class CustomerDetails(BaseModel):
     
@@ -40,6 +41,8 @@ class CustomerDetails(BaseModel):
     current_address = models.CharField(max_length=255, null=True)
     permanent_address = models.CharField(max_length=255,null=True)
     profile_photo = models.CharField(max_length=255, null=True)
+    description = models.TextField(null=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
     def __str__(self) -> str:
         return self.cif_id

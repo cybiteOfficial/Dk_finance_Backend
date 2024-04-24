@@ -2,6 +2,7 @@ from django.db import models
 from choices import Choices
 from applicants.models import Applicants
 from utils import generate_CollateralID
+from user_auth.models import Comments
 
 class CollateralDetails(models.Model):
     collateral_id = models.CharField(max_length=255, default=generate_CollateralID, unique=True)
@@ -10,7 +11,6 @@ class CollateralDetails(models.Model):
     collateralName = models.CharField(max_length=255)
     primarySecondary = models.CharField(max_length=255, null=True)
     valuationRequired = models.CharField(max_length=255, null=True)
-    description = models.TextField()
     relationshipWithLoan = models.CharField(max_length=255, null=True)
     propertyOwner = models.CharField(max_length=255, null=True)
     propertyCategory = models.CharField(max_length=255, null=True)
@@ -31,8 +31,8 @@ class CollateralDetails(models.Model):
     estimatedPropertyValue = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     documentName = models.CharField(max_length=255, null=True)
     documentUpload = models.CharField(max_length=300, null=True)
-    remark = models.TextField(null=True)
-
+    description = models.TextField(null=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
     isExisting = models.CharField(max_length=3, choices=Choices.IS_EXISTING_CHOICES, null=True)
 
     def __str__(self):

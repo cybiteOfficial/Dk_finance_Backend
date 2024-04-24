@@ -19,7 +19,7 @@ def response_data(error, message, data=None):
         return {"error": error, "message": message}
 
 def OauthGetToken(username, password):
-    url = Constants.OAUTH_URL
+    url = os.environ.get('OAUTH_URL')
     payload  = {
         "grant_type": Constants.GRANT_TYPE,
         "username": username,

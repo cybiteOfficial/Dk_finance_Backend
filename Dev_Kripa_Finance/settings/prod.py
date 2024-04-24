@@ -13,5 +13,4 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT','5432')
     }
 }
-
 CORS_ALLOW_ALL_ORIGINS = True

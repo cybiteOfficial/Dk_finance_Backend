@@ -6,6 +6,7 @@ from leads.models import Leads
 from phonepay.models import Payment
 from utils import generate_applicationID
 from choices import Choices
+from user_auth.models import Comments
 
 
 class Applicants(BaseModel):
@@ -14,6 +15,8 @@ class Applicants(BaseModel):
     lead = models.OneToOneField(Leads, on_delete=models.CASCADE, related_name='leads')
     paymentedetails = models.OneToOneField(Payment, on_delete=models.CASCADE, related_name='paymentdetail')
     status = models.CharField(max_length=200, choices= Choices.APPLICATION_STATUS_CHOICES, default='in_progress')
+    description = models.TextField(null=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
     def __str__(self) -> str:
         return self.application_id

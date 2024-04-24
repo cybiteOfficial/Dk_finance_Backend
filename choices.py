@@ -55,8 +55,8 @@ class Choices:
     ]
 
     TRANSACTION_TYPE = [
-        (),
-        ()
+        ('yes', 'Yes'),
+        ('no', 'No')
     ]
 
     PAYMENT_STATUS = [
