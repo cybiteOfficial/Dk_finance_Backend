@@ -16,4 +16,4 @@ DATABASES = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOWED_ORIGINS = ['*']
+CORS_ALLOWED_ORIGINS = ['https://example.com', 'http://example.com']
