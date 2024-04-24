@@ -6,6 +6,13 @@ class Choices:
         ('other', 'Other'),
     ]
 
+    TITLE_CHOICES = [
+        ('miss', 'Miss'),
+        ('ms.', 'Ms.'),
+        ('mrs', 'Mrs.'),
+        ('mr.', 'Mr.')
+    ]
+
     USER_TYPE_CHOICES = [
         ("ro", "Ro"), 
         ("do", "Do"), 
@@ -27,7 +34,7 @@ class Choices:
         ('home_loan', 'HomeLoan'),
     ]
 
-    LEAD_SOURCE_TYPE = [
+    SOURCE_TYPE = [
         ('website', 'Website'),
         ('out_source', 'Out_Source')
     ]
@@ -48,6 +55,27 @@ class Choices:
     ]
 
     TRANSACTION_TYPE = [
-        (),
-        ()
+        ('yes', 'Yes'),
+        ('no', 'No')
+    ]
+
+    PAYMENT_STATUS = [
+        ('done', 'DONE'),
+        ('pending', 'PENDING'), 
+        ('failed', 'FAILED')
+    ]
+
+    CUSTOMER_SEGMENT_CHOICES = [
+        ('self_employee', 'Self Employment'),
+        ('professional', 'Professional')
+    ]
+
+    APPLICATION_STATUS_CHOICES = [
+        ('in_progress', 'In progress'),
+        ('approved', 'Approved'),
+    ]
+    
+    IS_EXISTING_CHOICES = [
+        ('Yes', 'Yes'),
+        ('No', 'No')
     ]

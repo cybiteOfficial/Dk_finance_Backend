@@ -20,3 +20,5 @@ class DocumentsUpload(BaseModel):
     document_type = models.CharField(max_length=255, choices=Choices.DOCUMENT_TYPE_CHOICES)
     kyc = models.ForeignKey(KYCDetails, on_delete=models.DO_NOTHING, null=True, related_name="kyc_details")
     application = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING, related_name="application", null=True)
+    description = models.TextField(null=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)

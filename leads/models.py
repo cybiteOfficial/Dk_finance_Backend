@@ -19,7 +19,7 @@ class Leads(BaseModel):
     product_type = models.CharField(max_length=255, choices=Choices.PRODUCT_TYPE_CHOICES, default='normal')
     case_tag = models.CharField(max_length=255, choices=Choices.CASE_TAG_CHOICES, default='normal')
     customer_type = models.CharField(max_length=255, choices=Choices.CUSTOMER_TYPE_CHOICES, default='home_loan')
-    source = models.CharField(max_length=255, choices=Choices.LEAD_SOURCE_TYPE, default='website')
+    source = models.CharField(max_length=255, choices=Choices.SOURCE_TYPE, default='website')
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
