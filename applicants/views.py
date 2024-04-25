@@ -99,7 +99,6 @@ class CreateAppForPaymentReference(APIView):
     pagination_class = CommonPagination
 
     def post(self, request):
-        import pdb;pdb.set_trace()
         order_id = generate_OrderID()
         if order_id:
             Payment.objects.create(order_id=order_id)

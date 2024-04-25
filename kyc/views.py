@@ -45,7 +45,6 @@ class KYCVIew(APIView):
 
     def get(self, request):
         try:
-            import pdb;pdb.set_trace()
             # lead_id = request.query_params.get('lead_id')
             kyc_objs = self.queryset.all()
             if kyc_objs:
