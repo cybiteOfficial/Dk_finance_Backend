@@ -5,8 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from .serializers import LoanSerializer
 from .models import Loan
-from utils import response_data
+from utils import response_data, save_comment
 from applicants.models import Applicants
+from user_auth.serializers import CommentSerializer
 
 class LoanAPIView(APIView):
     serializer_class = LoanSerializer
@@ -16,7 +17,7 @@ class LoanAPIView(APIView):
     def get(self, request):
         try:
             loan_id = request.query_params.get('loan_id', None)
-            
+            application_id = request.query_params.get('application_id', None)
             if loan_id:
                 if self.queryset.filter(loan_id=loan_id).exists():
                     loan_obj = self.queryset.get(loan_id=loan_id)
@@ -30,6 +31,13 @@ class LoanAPIView(APIView):
                         response_data(True, "Loan not found."),
                         status=status.HTTP_404_NOT_FOUND
                     )
+            elif application_id:
+                loans_details = Loan.objects.filter(applicant__application_id = application_id)
+                serializer = self.serializer_class(loans_details, many=True)
+                return Response(
+                    response_data(False, "Loan found", serializer.data),
+                    status=status.HTTP_200_OK,
+                )
             else:
                 loans = self.queryset.all()
                 serializer = self.serializer_class(loans, many=True)
@@ -45,10 +53,9 @@ class LoanAPIView(APIView):
             )
 
     def post(self, request):
-
         data = request.data.copy()
 
-        application_id = request.query_params.get('application_id')
+        application_id = data.get('applicant_id')
 
         if Applicants.objects.filter(application_id = application_id).exists():
             applicant = Applicants.objects.get(application_id = application_id)
@@ -58,6 +65,9 @@ class LoanAPIView(APIView):
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
 
+        comment = save_comment(data['comment'])
+        if comment:
+            data['comment'] = comment.pk
         serializer = self.serializer_class(data=data)
         try:
             if serializer.is_valid():

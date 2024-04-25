@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
 from leads.models import Leads
 from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
@@ -25,7 +25,11 @@ class KYCVIew(APIView):
         for field in ["first_name", "last_name"]:
             if request.data.get(field):
                 data[field] = request.data[field].capitalize()
-                
+
+        comment = save_comment(data['comment'])
+        if comment:
+            data['comment'] = comment.pk
+
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -41,8 +45,9 @@ class KYCVIew(APIView):
 
     def get(self, request):
         try:
+            import pdb;pdb.set_trace()
             # lead_id = request.query_params.get('lead_id')
-            kyc_objs = self.queryset.filter(lead__lead_id = lead_id)
+            kyc_objs = self.queryset.all()
             if kyc_objs:
                 serializer = self.serializer_class(kyc_objs, many=True)
                 return Response(
@@ -137,6 +142,9 @@ class DocumentsUploadVIew(APIView):
         )
         if file_url:
             data["file"] = file_url
+            comment = save_comment(data['comment'])
+            if comment:
+                data['comment'] = comment.pk
             serializer = self.serializer_class(data=data)
             if serializer.is_valid():
                 serializer.save()

@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import CollateralDetails
 from .serializers import CollateralDetailsSerializer
 from applicants.models import Applicants
-from utils import response_data
+from utils import response_data, save_comment
 
 class CollateralDetailsAPIView(APIView):
     serializer_class = CollateralDetailsSerializer
@@ -29,7 +29,9 @@ class CollateralDetailsAPIView(APIView):
             return Response(
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
-        
+        comment = save_comment(data['comment'])
+        if comment:
+            data['comment'] = comment.pk
         serializer = self.serializer_class(data=request.data)
         
         try:

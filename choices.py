@@ -55,8 +55,7 @@ class Choices:
     ]
 
     TRANSACTION_TYPE = [
-        ('yes', 'Yes'),
-        ('no', 'No')
+        ('automatic', 'Automatic'),
     ]
 
     PAYMENT_STATUS = [
@@ -71,8 +70,12 @@ class Choices:
     ]
 
     APPLICATION_STATUS_CHOICES = [
-        ('in_progress', 'In progress'),
-        ('approved', 'Approved'),
+        ('ro_phase', 'RO Phase'),
+        ('do_phase', 'DO phase'),
+        ('md_phase', 'MD Phase'),
+        ('bm_phase', 'BM phase'),
+        ('technical_officer', 'Technical Officer'),
+        ('cluster', 'Cluster')
     ]
     
     IS_EXISTING_CHOICES = [

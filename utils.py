@@ -9,6 +9,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 
 import json
+from user_auth.serializers import CommentSerializer
+from user_auth.models import Comments
 
 load_dotenv()
 
@@ -80,13 +82,19 @@ def generate_PaymentID(length=8):
 def generate_locanID(length=8):
     """Generate a random payment of specified length."""
 
-    loan_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    loan_id = "ln_" + "".join(random.choices(string.digits, k=length))
     return loan_id
 
 def generate_CollateralID(length=8):
     """Generate a random payment of specified length."""
 
     Collateral_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    return Collateral_id
+
+def generate_OrderID(length=8):
+    """Generate a random payment of specified length."""
+
+    Collateral_id = "ord_" + "".join(random.choices(string.digits, k=length))
     return Collateral_id
 
 def generate_random_string(length=10):
@@ -102,3 +110,11 @@ def base64_encode(input_dict):
     json_data = json.dumps(input_dict)
     data_bytes = json_data.encode('utf-8')
     return base64.b64encode(data_bytes).decode('utf-8')
+
+def save_comment(comment_text):
+    serializer = CommentSerializer(data={"comment":comment_text})
+    if serializer.is_valid():
+        obj = serializer.save()
+        return Comments.objects.get(pk=obj.pk)
+    else:
+        return False

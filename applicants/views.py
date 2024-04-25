@@ -8,7 +8,7 @@ from .models import Applicants
 from leads.models import Leads
 from phonepay.models import Payment
 
-from utils import response_data
+from utils import response_data, save_comment, generate_OrderID
 from pagination import CommonPagination
 
 class ApplicantAPIView(APIView):
@@ -68,6 +68,10 @@ class ApplicantAPIView(APIView):
         
         data['paymentedetails'] = payment_obj.pk
         data['lead'] = lead_obj.pk
+
+        comment = save_comment(data['comment'])
+        if comment:
+            data['comment'] = comment.pk
         
         serializer = self.serializer_class(data=data)
         try:
@@ -87,3 +91,23 @@ class ApplicantAPIView(APIView):
                 response_data(True, e, serializer.errors),
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+class CreateAppForPaymentReference(APIView):
+    serializer_class = ApplicantsSerializer
+    permission_classes = (IsAuthenticated,)
+    queryset = Applicants.objects.all()
+    pagination_class = CommonPagination
+
+    def post(self, request):
+        import pdb;pdb.set_trace()
+        order_id = generate_OrderID()
+        if order_id:
+            Payment.objects.create(order_id=order_id)
+            paymt_obj = Payment.objects.get(order_id=order_id)
+        Applicants.objects.create(paymentedetails=paymt_obj)
+        applicant = Applicants.objects.get(paymentedetails=paymt_obj)
+        serializer = self.serializer_class(applicant)
+        return Response(
+            response_data(False, "Applicant created successfully", serializer.data),
+            status=status.HTTP_200_OK,
+        )

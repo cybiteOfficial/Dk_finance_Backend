@@ -6,7 +6,7 @@ from .serializers import CustomerDetailsSerializer
 
 from applicants.models import Applicants
 from constant import Constants
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
 from rest_framework import status
 from pagination import CommonPagination
 
@@ -81,7 +81,9 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 )
                 if file_url:
                     data['profile_photo'] = file_url
-
+            comment = save_comment(data['comment'])
+            if comment:
+                data['comment'] = comment.pk
             serializer = self.serializer_class(data=data)
             
             if serializer.is_valid():
