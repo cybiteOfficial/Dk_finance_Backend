@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from .models import CollateralDetails
 from .serializers import CollateralDetailsSerializer
 from applicants.models import Applicants
-from utils import response_data, save_comment
+from constant import Constants
+from utils import response_data, save_comment, make_s3_connection, upload_file_to_s3_bucket
 
 class CollateralDetailsAPIView(APIView):
     serializer_class = CollateralDetailsSerializer
@@ -19,9 +20,10 @@ class CollateralDetailsAPIView(APIView):
             return None
     
     def post(self, request):
-
         data = request.data.copy()
-        application_id = request.query_params.get('application_id')
+        collateral_id = data.get('collateral_id')
+
+        application_id = data.get('applicant_id')
         if Applicants.objects.filter(application_id = application_id).exists():
             applicant = Applicants.objects.get(application_id = application_id)
             data['applicant'] = applicant.pk
@@ -29,28 +31,64 @@ class CollateralDetailsAPIView(APIView):
             return Response(
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
+
         comment = save_comment(data.get('comment'))
         if comment:
             data['comment'] = comment.pk
-        serializer = self.serializer_class(data=request.data)
-        
-        try:
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                    response_data(False, "Collateral detail created successfully", serializer.data),
-                    status=status.HTTP_200_OK,
+            
+        if collateral_id:
+            
+            if request.data.get('documentUpload'):
+                file_obj = request.FILES.get('documentUpload')
+                bucket_name = Constants.BUCKET_FOR_KYC
+                file_path = f"collatral_doc/{file_obj}"
+                s3_conn = make_s3_connection()
+                file_url = upload_file_to_s3_bucket(
+                    s3_conn, file_obj, bucket_name, file_path
                 )
-            else:
+                if file_url:
+                    data['documentUpload'] = file_url
+
+
+            if CollateralDetails.objects.filter(collateral_id=collateral_id).exists():
+                collateral_obj = CollateralDetails.objects.get(collateral_id=collateral_id)
+                serializer = self.serializer_class(collateral_obj, data=data)
+                try:
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(
+                            response_data(False, "Collateral updated successfully", serializer.data),
+                            status=status.HTTP_200_OK,
+                        )
+                    else:
+                        return Response(
+                            response_data(True, "Something went wrong", serializer.errors),
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                except Exception as e:
+                    return Response(
+                        response_data(True, e, serializer.errors),
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        else:
+            serializer = self.serializer_class(data=data)
+            try:
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        response_data(False, "Collateral created successfully", serializer.data),
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return Response(
+                        response_data(True, "Something went wrong", serializer.errors),
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except Exception as e:
                 return Response(
-                    response_data(True, "Something went wrong", serializer.errors),
+                    response_data(True, e, serializer.errors),
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        except Exception as e:
-            return Response(
-                response_data(True, e, serializer.errors),
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
     def get(self, request):
         try:
@@ -65,7 +103,7 @@ class CollateralDetailsAPIView(APIView):
                     )
                 else:
                     return Response(
-                        response_data(True, "Loan not found."),
+                        response_data(True, "Collatral not found."),
                         status=status.HTTP_404_NOT_FOUND
                     )
             else:

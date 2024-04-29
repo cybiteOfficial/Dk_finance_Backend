@@ -56,20 +56,21 @@ class LoanAPIView(APIView):
         data = request.data.copy()
         loan_id = data.get('loan_id')
 
+        application_id = data.get('applicant_id')
+        if Applicants.objects.filter(application_id = application_id).exists():
+            applicant = Applicants.objects.get(application_id = application_id)
+            data['applicant'] = applicant.pk
+        else:
+            return Response(
+                response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
+            )
+
+
+        comment = save_comment(data.get('comment'))
+        if comment:
+            data['comment'] = comment.pk
+        
         if loan_id:
-            application_id = data.get('applicant_id')
-
-            if Applicants.objects.filter(application_id = application_id).exists():
-                applicant = Applicants.objects.get(application_id = application_id)
-                data['applicant'] = applicant.pk
-            else:
-                return Response(
-                    response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
-                )
-
-            comment = save_comment(data.get('comment'))
-            if comment:
-                data['comment'] = comment.pk
 
             if Loan.objects.filter(loan_id=loan_id).exists():
                 loan_obj = Loan.objects.get(loan_id=loan_id)
@@ -91,25 +92,25 @@ class LoanAPIView(APIView):
                         response_data(True, e, serializer.errors),
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-            else:
-                serializer = self.serializer_class(data=data)
-                try:
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response(
-                            response_data(False, "Loan created successfully", serializer.data),
-                            status=status.HTTP_201_CREATED,
-                        )
-                    else:
-                        return Response(
-                            response_data(True, "Something went wrong", serializer.errors),
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                except Exception as e:
+        else:
+            serializer = self.serializer_class(data=data)
+            try:
+                if serializer.is_valid():
+                    serializer.save()
                     return Response(
-                        response_data(True, e, serializer.errors),
+                        response_data(False, "Loan created successfully", serializer.data),
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return Response(
+                        response_data(True, "Something went wrong", serializer.errors),
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+            except Exception as e:
+                return Response(
+                    response_data(True, e, serializer.errors),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
     def delete(self, request, loan_id):
         try:

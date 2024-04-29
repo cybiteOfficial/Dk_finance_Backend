@@ -111,6 +111,10 @@ def base64_encode(input_dict):
     data_bytes = json_data.encode('utf-8')
     return base64.b64encode(data_bytes).decode('utf-8')
 
+def generate_agent_code(prefix='dke_', length=4):
+    random_numbers = ''.join(random.choices(string.digits, k=length))
+    return prefix + random_numbers
+
 def save_comment(comment_text):
     if comment_text:
         serializer = CommentSerializer(data={"comment":comment_text})
