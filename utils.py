@@ -112,9 +112,12 @@ def base64_encode(input_dict):
     return base64.b64encode(data_bytes).decode('utf-8')
 
 def save_comment(comment_text):
-    serializer = CommentSerializer(data={"comment":comment_text})
-    if serializer.is_valid():
-        obj = serializer.save()
-        return Comments.objects.get(pk=obj.pk)
+    if comment_text:
+        serializer = CommentSerializer(data={"comment":comment_text})
+        if serializer.is_valid():
+            obj = serializer.save()
+            return Comments.objects.get(pk=obj.pk)
+        else:
+            return False
     else:
         return False

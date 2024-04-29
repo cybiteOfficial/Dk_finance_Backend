@@ -29,7 +29,7 @@ class CollateralDetailsAPIView(APIView):
             return Response(
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
-        comment = save_comment(data['comment'])
+        comment = save_comment(data.get('comment'))
         if comment:
             data['comment'] = comment.pk
         serializer = self.serializer_class(data=request.data)

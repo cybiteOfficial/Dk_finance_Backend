@@ -9,7 +9,7 @@ class KYCDetails(BaseModel):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     mobile_number = PhoneNumberField()
-    email = models.EmailField(max_length=100)
+    email = models.EmailField(max_length=100, null=True)
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 

@@ -40,7 +40,7 @@ class LeadView(APIView):
                     else request.data[field].capitalize()
                 )
         data['assigned_to'] = user.pk
-        comment = save_comment(data['comment'])
+        comment = save_comment(data.get('comment'))
         if comment:
             data['comment'] = comment.pk
         serializer = self.serializer_class(data=data)
@@ -58,7 +58,6 @@ class LeadView(APIView):
 
     def get(self, request):
         try:
-            import pdb;pdb.set_trace()
             leads = self.queryset.filter(assigned_to__email = request.user.email)
             if leads:
                 serializer = self.serializer_class(leads, many=True)

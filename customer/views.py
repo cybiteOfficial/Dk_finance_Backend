@@ -81,7 +81,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 )
                 if file_url:
                     data['profile_photo'] = file_url
-            comment = save_comment(data['comment'])
+            comment = save_comment(data.get('comment'))
             if comment:
                 data['comment'] = comment.pk
             serializer = self.serializer_class(data=data)

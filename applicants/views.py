@@ -69,7 +69,7 @@ class ApplicantAPIView(APIView):
         data['paymentedetails'] = payment_obj.pk
         data['lead'] = lead_obj.pk
 
-        comment = save_comment(data['comment'])
+        comment = save_comment(data.get('comment'))
         if comment:
             data['comment'] = comment.pk
         
@@ -99,7 +99,6 @@ class CreateAppForPaymentReference(APIView):
     pagination_class = CommonPagination
 
     def post(self, request):
-        import pdb;pdb.set_trace()
         order_id = generate_OrderID()
         if order_id:
             Payment.objects.create(order_id=order_id)
