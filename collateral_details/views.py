@@ -85,11 +85,8 @@ class CollateralDetailsAPIView(APIView):
                     response_data(False, "collateral details found", serializer.data),
                     status=status.HTTP_200_OK,
                 )
-            else:
-                return Response(
-                    response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
-                )
-
+            
+            
             if collateral_id:
                 if self.queryset.filter(collateral_id=collateral_id).exists():
                     collateral_obj = self.queryset.get(collateral_id=collateral_id)
