@@ -91,6 +91,12 @@ def generate_CollateralID(length=8):
     Collateral_id = "pmt_" + "".join(random.choices(string.digits, k=length))
     return Collateral_id
 
+def generate_cafID(length=8):
+    """Generate a random caf of specified length."""
+
+    caf_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    return caf_id
+
 def generate_OrderID(length=8):
     """Generate a random payment of specified length."""
 
