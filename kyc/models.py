@@ -13,6 +13,7 @@ class KYCDetails(BaseModel):
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
+
 class DocumentsUpload(BaseModel):
     document_name = models.CharField(max_length=255, null=True)
     document_id = models.CharField(max_length=255, null=True)

@@ -149,3 +149,6 @@ class DocumentsUploadVIew(APIView):
                     response_data(True, "Something went wrong", serializer.errors),
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            
+
+            
