@@ -79,6 +79,6 @@ class Choices:
     ]
     
     IS_EXISTING_CHOICES = [
-        ('Yes', 'Yes'),
-        ('No', 'No')
+        ('true', 'True'),
+        ('False', 'false')
     ]

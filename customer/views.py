@@ -71,7 +71,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
         try:
-            if request.data.get('profile_photo'):
+            if request.FILES.get('profile_photo'):
                 file_obj = request.FILES.get('profile_photo')
                 bucket_name = Constants.BUCKET_FOR_PROFILE_PHOTOS
                 file_path = f"Profile_photos/{file_obj}"
@@ -109,7 +109,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
             customer_obj = self.get_customer(customer_id)
 
             if customer_obj:
-                if request.data.get('profile_photo'):
+                if request.FILES.get('profile_photo'):
                     file_obj = request.FILES.get('profile_photo')
                     bucket_name = Constants.BUCKET_FOR_PROFILE_PHOTOS
                     file_path = f"Profile_photos/{file_obj}"

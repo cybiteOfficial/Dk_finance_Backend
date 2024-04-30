@@ -88,7 +88,7 @@ def generate_locanID(length=8):
 def generate_CollateralID(length=8):
     """Generate a random payment of specified length."""
 
-    Collateral_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    Collateral_id = "cltrl_" + "".join(random.choices(string.digits, k=length))
     return Collateral_id
 
 def generate_cafID(length=8):

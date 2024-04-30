@@ -33,7 +33,7 @@ class CollateralDetails(models.Model):
     documentUpload = models.CharField(max_length=300, null=True)
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
-    isExisting = models.CharField(max_length=3, choices=Choices.IS_EXISTING_CHOICES, null=True)
+    isExisting = models.CharField(max_length=255, null=True)
 
     def __str__(self):
         return self.collateralName

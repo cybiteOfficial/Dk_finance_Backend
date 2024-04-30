@@ -22,7 +22,6 @@ class CollateralDetailsAPIView(APIView):
     def post(self, request):
         data = request.data.copy()
         collateral_id = data.get('collateral_id')
-
         application_id = data.get('applicant_id')
         if Applicants.objects.filter(application_id = application_id).exists():
             applicant = Applicants.objects.get(application_id = application_id)
@@ -36,63 +35,61 @@ class CollateralDetailsAPIView(APIView):
         if comment:
             data['comment'] = comment.pk
             
-        if collateral_id:
-            
-            if request.data.get('documentUpload'):
-                file_obj = request.FILES.get('documentUpload')
-                bucket_name = Constants.BUCKET_FOR_KYC
-                file_path = f"collatral_doc/{file_obj}"
-                s3_conn = make_s3_connection()
-                file_url = upload_file_to_s3_bucket(
-                    s3_conn, file_obj, bucket_name, file_path
-                )
-                if file_url:
-                    data['documentUpload'] = file_url
+        if request.FILES.get('documentUpload'):
+            file_obj = request.FILES.get('documentUpload')
+            bucket_name = Constants.BUCKET_FOR_KYC
+            file_path = f"collatral_doc/{file_obj}"
+            s3_conn = make_s3_connection()
+            file_url = upload_file_to_s3_bucket(
+                s3_conn, file_obj, bucket_name, file_path
+            )
+            if file_url:
+                data['documentUpload'] = file_url
 
+        if collateral_id:
 
             if CollateralDetails.objects.filter(collateral_id=collateral_id).exists():
                 collateral_obj = CollateralDetails.objects.get(collateral_id=collateral_id)
                 serializer = self.serializer_class(collateral_obj, data=data)
-                try:
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response(
-                            response_data(False, "Collateral updated successfully", serializer.data),
-                            status=status.HTTP_200_OK,
-                        )
-                    else:
-                        return Response(
-                            response_data(True, "Something went wrong", serializer.errors),
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                except Exception as e:
-                    return Response(
-                        response_data(True, e, serializer.errors),
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+               
         else:
             serializer = self.serializer_class(data=data)
-            try:
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(
-                        response_data(False, "Collateral created successfully", serializer.data),
-                        status=status.HTTP_201_CREATED,
-                    )
-                else:
-                    return Response(
-                        response_data(True, "Something went wrong", serializer.errors),
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-            except Exception as e:
+
+        try:
+            if serializer.is_valid():
+                serializer.save()
                 return Response(
-                    response_data(True, e, serializer.errors),
+                    response_data(False, "success", serializer.data),
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(
+                    response_data(True, "Something went wrong", serializer.errors),
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+        except Exception as e:
+            return Response(
+                response_data(True, e, serializer.errors),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     def get(self, request):
         try:
             collateral_id = request.query_params.get('collateral_id', None)
+            application_id = request.query_params.get('application_id', None)
+
+            if Applicants.objects.filter(application_id = application_id).exists():
+                collateral_obj = self.queryset.filter(applicant__application_id=application_id)
+                serializer = self.serializer_class(collateral_obj, many=True)
+                return Response(
+                    response_data(False, "collateral details found", serializer.data),
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
+                )
+
             if collateral_id:
                 if self.queryset.filter(collateral_id=collateral_id).exists():
                     collateral_obj = self.queryset.get(collateral_id=collateral_id)
