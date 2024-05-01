@@ -55,27 +55,28 @@ class Choices:
     ]
 
     TRANSACTION_TYPE = [
-        ('yes', 'Yes'),
-        ('no', 'No')
+       ('purchase', 'Purchase'),
+        ('refinance', 'Refinance'),
+        ('construction', 'Construction'),
     ]
-
     PAYMENT_STATUS = [
-        ('done', 'DONE'),
-        ('pending', 'PENDING'), 
-        ('failed', 'FAILED')
-    ]
-
-    CUSTOMER_SEGMENT_CHOICES = [
-        ('self_employee', 'Self Employment'),
-        ('professional', 'Professional')
-    ]
-
-    APPLICATION_STATUS_CHOICES = [
-        ('in_progress', 'In progress'),
-        ('approved', 'Approved'),
+        ('Initiated', 'Initiated'),
+        ('Pending', 'Pending'),
+        ('Successful', 'Successful'),
+        ('Failed', 'Failed'),
     ]
     
+    APPLICATION_STATUS_CHOICES = [
+        ('ro_phase', 'Review Phase'),
+        ('ap_phase', 'Approval Phase'),
+        ('rej_phase', 'Rejection Phase'),
+     ]
+    CUSTOMER_SEGMENT_CHOICES = [
+        ('segment1', 'Segment 1'),
+        ('segment2', 'Segment 2'),
+        ('segment3', 'Segment 3'),
+     ]
     IS_EXISTING_CHOICES = [
-        ('Yes', 'Yes'),
-        ('No', 'No')
-    ]
+        ('yes', 'Yes'),
+        ('no', 'No'),
+     ]

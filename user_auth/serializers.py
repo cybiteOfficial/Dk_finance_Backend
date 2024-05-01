@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from user_auth.models import User
+from user_auth.models import User, Comments
 from django.contrib.auth.models import Group, Permission
 
 
@@ -60,3 +60,9 @@ class SignUpSerializer(serializers.ModelSerializer):
         validated_data.pop("confirm_password")
         user = User.objects.create_user(**validated_data)
         return user
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comments
+        fields = "__all__"
+    

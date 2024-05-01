@@ -13,7 +13,10 @@ class ApplicantsSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(ApplicantsSerializer, self).to_representation(instance)
-        representation['lead'] = instance.lead.lead_id
+        if instance.lead:
+            representation['lead'] = instance.lead.lead_id
         representation['paymentedetails'] = instance.paymentedetails.payment_id
+        if instance.comment:
+            representation['comment'] = instance.comment.comment
         return representation
     

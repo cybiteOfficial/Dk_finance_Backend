@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data
+from utils import response_data, save_comment
 from user_auth.models import User
 from .models import Leads
 from .serializers import LeadsSerializer
@@ -40,6 +40,9 @@ class LeadView(APIView):
                     else request.data[field].capitalize()
                 )
         data['assigned_to'] = user.pk
+        comment = save_comment(data.get('comment'))
+        if comment:
+            data['comment'] = comment.pk
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()

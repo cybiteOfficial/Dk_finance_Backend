@@ -3,11 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
 from leads.models import Leads
 from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
 from constant import Constants
+from applicants.models import Applicants
 
 class KYCVIew(APIView):
     serializer_class = KycDetailsSerializer
@@ -25,7 +26,11 @@ class KYCVIew(APIView):
         for field in ["first_name", "last_name"]:
             if request.data.get(field):
                 data[field] = request.data[field].capitalize()
-                
+
+        comment = save_comment(data.get('comment'))
+        if comment:
+            data['comment'] = comment.pk
+
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -42,7 +47,7 @@ class KYCVIew(APIView):
     def get(self, request):
         try:
             # lead_id = request.query_params.get('lead_id')
-            kyc_objs = self.queryset.filter(lead__lead_id = lead_id)
+            kyc_objs = self.queryset.all()
             if kyc_objs:
                 serializer = self.serializer_class(kyc_objs, many=True)
                 return Response(
@@ -115,7 +120,9 @@ class DocumentsUploadVIew(APIView):
     def post(self, request):
         data = request.data.copy()
         kyc_id = data.get('kyc_id', None)
+        app_id = data.get('application_id', None)
         file_obj = request.FILES.get('file')
+
         if data.get('document_type') == 'kyc' and kyc_id:
             if KYCDetails.objects.filter(pk=kyc_id).exists():  
                 kyc_obj = KYCDetails.objects.get(pk=kyc_id)
@@ -127,7 +134,14 @@ class DocumentsUploadVIew(APIView):
                 return Response(
                     response_data(True, "KYC details not found"), status.HTTP_400_BAD_REQUEST
                 )
-        else:
+        elif app_id:
+            if Applicants.objects.filter(application_id = app_id).exists():
+                applicant = Applicants.objects.get(application_id = app_id)
+                data['application'] = applicant.pk
+            else:
+                return Response(
+                    response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
+                )
             file_path = f"finance_documents/{file_obj}"
             bucket_name = Constants.BUCKET_FOR_FINANCE_DOCUMENTS
 
@@ -137,6 +151,9 @@ class DocumentsUploadVIew(APIView):
         )
         if file_url:
             data["file"] = file_url
+            comment = save_comment(data.get('comment'))
+            if comment:
+                data['comment'] = comment.pk
             serializer = self.serializer_class(data=data)
             if serializer.is_valid():
                 serializer.save()
