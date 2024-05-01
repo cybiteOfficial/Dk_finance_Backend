@@ -15,9 +15,8 @@ class KYCDetails(BaseModel):
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
     lead_id = models.ForeignKey(Leads, on_delete=models.DO_NOTHING, null=True)
-
-    
-
+    kyc_verified = models.BooleanField(null=True, blank=True)
+    kyc_document_verified = models.BooleanField(null=True, blank=True)
 
 
 class DocumentsUpload(BaseModel):

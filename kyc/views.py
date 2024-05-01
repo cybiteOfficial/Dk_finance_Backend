@@ -161,6 +161,8 @@ class DocumentsUploadVIew(APIView):
             serializer = self.serializer_class(data=data)
             if serializer.is_valid():
                 serializer.save()
+                if data.get('document_type') == 'kyc' and kyc_id:
+                    KYCDetails.objects.filter(uuid = kyc_id).update(kyc_document_verified=True)
                 return Response(
                     response_data(False, "Document uploaded successfully", serializer.data),
                     status=status.HTTP_200_OK,

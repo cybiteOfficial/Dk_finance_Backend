@@ -47,7 +47,7 @@ class LeadView(APIView):
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             data = serializer.save()
-            KYCDetails.objects.create(lead_id =data)
+            KYCDetails.objects.create(lead_id =data, kyc_verified=False, kyc_document_verified=False)
             return Response(
                 response_data(False, "Lead created successfully", serializer.data),
                 status=status.HTTP_200_OK,
