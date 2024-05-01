@@ -1,9 +1,11 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
-from user_auth.models import BaseModel, Comments
+from user_auth.models import BaseModel,User, Comments
 from leads.models import Leads
 from choices import Choices
 from applicants.models import Applicants
+
+ 
 
 class KYCDetails(BaseModel):
     first_name = models.CharField(max_length=255)
@@ -12,6 +14,10 @@ class KYCDetails(BaseModel):
     email = models.EmailField(max_length=100, null=True)
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
+    lead_id = models.ForeignKey(Leads, on_delete=models.DO_NOTHING, null=True)
+
+    
+
 
 
 class DocumentsUpload(BaseModel):

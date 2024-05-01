@@ -13,8 +13,8 @@ class KycDetailsSerializer(serializers.ModelSerializer):
             representation['comment'] = instance.comment.comment
         return representation
 
-class DocumentUploadSerializer(serializers.ModelSerializer):
 
+class DocumentUploadSerializer(serializers.ModelSerializer): 
     class Meta:
         model = DocumentsUpload
         fields = '__all__'

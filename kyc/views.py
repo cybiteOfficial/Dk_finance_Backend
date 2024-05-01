@@ -47,7 +47,7 @@ class KYCVIew(APIView):
     def get(self, request):
         try:
             lead_id = request.query_params.get('lead_id')
-            kyc_objs = self.queryset.filter(application_id=lead_id).exists()
+            kyc_objs = self.queryset.filter(lead_id=lead_id).exists()
             if kyc_objs:
                 serializer = self.serializer_class(kyc_objs, many=True)
                 return Response(
