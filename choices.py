@@ -77,6 +77,6 @@ class Choices:
         ('segment3', 'Segment 3'),
      ]
     IS_EXISTING_CHOICES = [
-        ('yes', 'Yes'),
-        ('no', 'No'),
-     ]
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    ]
