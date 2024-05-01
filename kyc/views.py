@@ -23,6 +23,10 @@ class KYCVIew(APIView):
     
     def post(self, request):
         data = request.data.copy()
+        lead_id = request.data.get('lead_id')
+        if Leads.objects.filter(lead_id=lead_id).exists():
+            lead_obj = Leads.objects.get(lead_id=lead_id)
+            data['lead_id'] = lead_obj.pk
         for field in ["first_name", "last_name"]:
             if request.data.get(field):
                 data[field] = request.data[field].capitalize()
