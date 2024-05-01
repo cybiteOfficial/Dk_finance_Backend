@@ -9,6 +9,7 @@ from .models import Leads
 from .serializers import LeadsSerializer
 
 from rest_framework import permissions
+from kyc.models import KYCDetails
 
 class LeadView(APIView):
     serializer_class = LeadsSerializer
@@ -45,7 +46,8 @@ class LeadView(APIView):
             data['comment'] = comment.pk
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
-            serializer.save()
+            data = serializer.save()
+            KYCDetails.objects.create(lead_id =data)
             return Response(
                 response_data(False, "Lead created successfully", serializer.data),
                 status=status.HTTP_200_OK,
