@@ -97,6 +97,13 @@ def generate_cafID(length=8):
     caf_id = "caf_" + "".join(random.choices(string.digits, k=length))
     return caf_id
 
+
+def generate_photoID(length=8):
+    """Generate a random caf of specified length."""
+
+    photo_id = "pho_" + "".join(random.choices(string.digits, k=length))
+    return photo_id
+
 def generate_OrderID(length=8):
     """Generate a random payment of specified length."""
 
