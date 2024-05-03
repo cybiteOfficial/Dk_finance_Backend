@@ -4,12 +4,16 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import ApplicantsSerializer
-from .models import Applicants
+from .models import Applicants,AuditTrail
 from leads.models import Leads
 from phonepay.models import Payment
 
 from utils import response_data, save_comment, generate_OrderID
 from pagination import CommonPagination
+import json
+from django.db import transaction
+from choices import Choices
+
 
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
