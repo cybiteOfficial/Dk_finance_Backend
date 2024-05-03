@@ -119,7 +119,6 @@ class CreateAppForPaymentReference(APIView):
 
 
 
-
 class UpdateApplicationStatus(APIView):
     permission_classes = [IsAuthenticated]
 

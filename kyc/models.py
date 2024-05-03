@@ -18,9 +18,6 @@ class KYCDetails(BaseModel):
     kyc_verified = models.BooleanField(null=True, blank=True)
     kyc_document_verified = models.BooleanField(null=True, blank=True)
 
-    def get_latest_ordered_queryset(cls):
-        return cls.objects.order_by('-created_at')
-
 
 class DocumentsUpload(BaseModel):
     document_name = models.CharField(max_length=255, null=True)
