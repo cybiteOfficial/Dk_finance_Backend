@@ -20,3 +20,11 @@ class Applicants(BaseModel):
 
     def __str__(self) -> str:
         return self.application_id
+    
+
+
+class AuditTrail(BaseModel):
+    current_status = models.CharField(max_length=255, null=True, blank=True)
+    updated_status =models.CharField(max_length=255, null=True, blank=True)
+    updated_by = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    application_id = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING)
