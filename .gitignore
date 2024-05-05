@@ -1,0 +1,25 @@
+# Django project files and directories
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+media/
+static/
+*.log
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and coverage files
+.coverage
+.pytest_cache/
+
+# IDE and editor files
+.idea/
+.vscode/
+
+# virtualenv
+venv
+.env
