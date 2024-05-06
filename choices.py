@@ -80,3 +80,11 @@ class Choices:
         ('Yes', 'Yes'),
         ('No', 'No')
     ]
+
+    FORWARD_STATUS_BINDING = {
+    "ro_phase":"do_phase",
+    "do_phase":"technicalofficer",
+    "technicalofficer":"bm_phase",
+    "bm_phase":"md_phase",
+    "md_phase":"cluster",
+    }

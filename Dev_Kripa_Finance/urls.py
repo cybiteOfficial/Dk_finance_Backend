@@ -31,7 +31,7 @@ urlpatterns = [
     path('api/v1/', include('phonepay.urls')),
     path('api/v1/', include('loan.urls')),
     path('api/v1/', include('collateral_details.urls')),
-    path('api/v1/', include('caf_details.urls')),
+    path('api/v1/', include('caf_form.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -4,12 +4,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import ApplicantsSerializer
-from .models import Applicants
+from .models import Applicants, AuditTrail
 from leads.models import Leads
 from phonepay.models import Payment
 
 from utils import response_data, save_comment, generate_OrderID
 from pagination import CommonPagination
+from choices import Choices
+from django.db import transaction
+
 
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
@@ -110,3 +113,30 @@ class CreateAppForPaymentReference(APIView):
             response_data(False, "Applicant created successfully", serializer.data),
             status=status.HTTP_200_OK,
         )
+
+class UpdateApplicationStatus(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            status_list = Choices.FORWARD_STATUS_BINDING
+            app_ids = eval(request.data.get("applications_ids"))
+            event = Applicants.objects.filter(application_id__in=app_ids).values('application_id', 'status')
+            data = {}
+            for item in event:
+                if data.get(item["status"]):
+                    data.get(item["status"]).append(item["application_id"])
+                else:
+                    data[item["status"]]= [item["application_id"]]
+            for key, value in data.items():
+                new_status = status_list.get(key)
+                applicant_to_update = Applicants.objects.filter(application_id__in=app_ids)
+                applicant_to_update.update(status= new_status)
+                audit_trail = [
+                    AuditTrail(application_id=app, current_status=key, updated_status=new_status, updated_by=request.user)
+                    for app in applicant_to_update
+                ]
+                with transaction.atomic():
+                    AuditTrail.objects.bulk_create(audit_trail)
+                return Response(response_data(True, "Status updated successfully"), status=status.HTTP_200_OK)
+        except:
+            return Response(response_data(True, "status not updated"), status=status.HTTP_400_BAD_REQUEST)

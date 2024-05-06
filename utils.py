@@ -94,7 +94,7 @@ def generate_CollateralID(length=8):
 def generate_cafID(length=8):
     """Generate a random caf of specified length."""
 
-    caf_id = "pmt_" + "".join(random.choices(string.digits, k=length))
+    caf_id = "caf_" + "".join(random.choices(string.digits, k=length))
     return caf_id
 
 def generate_OrderID(length=8):

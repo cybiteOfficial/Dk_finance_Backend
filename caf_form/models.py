@@ -4,10 +4,10 @@ from applicants.models import Applicants
 from utils import generate_cafID
 from user_auth.models import Comments
 
-class Customer_Caf(models.Model):
+class CafDetails(models.Model):
 
     caf_id = models.CharField(max_length=255, default=generate_cafID, unique=True)
-    applicant = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING, related_name='applicant_id')
+    applicant = models.OneToOneField(Applicants, on_delete=models.CASCADE, related_name='applicant_id', null=True)
     tentative_amt = models.FloatField(max_length=15, null=True, blank=True)
     pdWith = models.CharField(max_length=255, null=True, blank=True)
     placeOfPdAddress = models.TextField(null=True,blank=True)
