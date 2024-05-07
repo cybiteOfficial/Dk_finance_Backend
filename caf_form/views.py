@@ -6,6 +6,7 @@ from .models import CafDetails
 from .serializers import CafSerializer
 from applicants.models import Applicants
 from utils import response_data, save_comment
+from customer.models import CustomerDetails
 
 class CafFomAPIView(APIView):
     serializer_class = CafSerializer
@@ -26,11 +27,18 @@ class CafFomAPIView(APIView):
             serializer = self.serializer_class(caf_obj, data=data)
         else:
             application_id = data.get('applicant_id')
+            customer_id = data.get('customer_id')
             if Applicants.objects.filter(application_id=application_id).exists():
                 applicant = Applicants.objects.get(application_id=application_id)
                 data['applicant'] = applicant.pk
             else:
                 return Response(response_data(True, "Applicant not found"), status=status.HTTP_400_BAD_REQUEST)
+
+            if CustomerDetails.objects.filter(cif_id=customer_id, applicant__application_id = application_id).exists():
+                customer_obj = CustomerDetails.objects.get(cif_id=customer_id, applicant__application_id = application_id)
+                data['customer'] = customer_obj.pk
+            else:
+                return Response(response_data(True, "customer not found"), status=status.HTTP_400_BAD_REQUEST)
 
             comment = save_comment(data.get('comment'))
             if comment:

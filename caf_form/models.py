@@ -3,10 +3,13 @@ from choices import Choices
 from applicants.models import Applicants
 from utils import generate_cafID
 from user_auth.models import Comments
+from customer.models import CustomerDetails
+
 
 class CafDetails(models.Model):
 
     caf_id = models.CharField(max_length=255, default=generate_cafID, unique=True)
+    customer = models.ForeignKey(CustomerDetails, on_delete=models.CASCADE, null=True)
     applicant = models.OneToOneField(Applicants, on_delete=models.CASCADE, related_name='applicant_id', null=True)
     tentative_amt = models.FloatField(max_length=15, null=True, blank=True)
     pdWith = models.CharField(max_length=255, null=True, blank=True)

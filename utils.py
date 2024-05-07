@@ -49,7 +49,9 @@ def make_s3_connection():
 def upload_file_to_s3_bucket(s3_conn, file, bucket_name, file_key):
     try:
         s3_conn.put_object(Body=file.read(), Bucket=bucket_name, Key=file_key)
-        file_url = f"s3://{bucket_name}/{file_key}"
+        region = os.environ.get('REGION')
+        # file_url = f"s3://{bucket_name}/{file_key}"
+        file_url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_key}"
         return str(file_url)
     except Exception as e:
         return False

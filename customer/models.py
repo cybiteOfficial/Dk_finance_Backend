@@ -24,7 +24,7 @@ class CustomerDetails(BaseModel):
     source = models.CharField(max_length=255, choices=Choices.SOURCE_TYPE, default='website', null=True)
 
     # for android
-    customerSegment = models.CharField(max_length=255, choices=Choices.CUSTOMER_SEGMENT_CHOICES, null=True)
+    customerSegment = models.CharField(max_length=255, null=True)
     industry = models.CharField(max_length=255, null=True)
     occupation = models.CharField(max_length=255, default='Worker', null=True)
     sourceOfIncome = models.CharField(max_length=255, default='Business', null=True)
@@ -46,3 +46,21 @@ class CustomerDetails(BaseModel):
 
     def __str__(self) -> str:
         return self.cif_id
+
+class CustomerAddress(BaseModel):
+    customer = models.ForeignKey(CustomerDetails, on_delete=models.DO_NOTHING)
+    is_current = models.BooleanField(default=True)
+    is_permanent = models.BooleanField(default=False)
+    address_line_1 = models.CharField(max_length=255, null=True, blank=True)
+    address_line_2 = models.CharField(max_length=255, null=True, blank=True)
+    address_line_3 = models.CharField(max_length=255, null=True, blank=True)
+    state = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=255, null=True, blank=True)
+    district = models.CharField(max_length=255, null=True, blank=True)
+    tehsil_or_taluka = models.CharField(max_length=255, null=True, blank=True)
+    pincode = models.CharField(max_length=255, null=True, blank=True)
+    landmark = models.CharField(max_length=255, null=True, blank=True)
+    residence_state = models.CharField(max_length=255, null=True, blank=True)
+    residence_type = models.CharField(max_length=255, null=True, blank=True)
+    stability_at_residence = models.CharField(max_length=255, null=True, blank=True)
+    distance_from_branch = models.CharField(max_length=255, null=True, blank=True)
