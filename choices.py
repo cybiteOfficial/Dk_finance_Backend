@@ -46,7 +46,8 @@ class Choices:
 
     DOCUMENT_TYPE_CHOICES = [
         ('kyc', 'KYC'),
-        ('other', 'Other')
+        ('other', 'Other'),
+        ('photos', 'Photos')
     ]
 
     VERIFICATION_TYPE_CHOICES = [

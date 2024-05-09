@@ -120,13 +120,17 @@ class DocumentsUploadVIew(APIView):
         except DocumentsUpload.DoesNotExist:
             return None
 
-    def save_document(self, file, data, doc_type):
+    def save_document(self, file, data, doc_type, obj=False):
         if doc_type == "kyc":
             file_path = f"KYC_documents/{file}"
             bucket_name = Constants.BUCKET_FOR_KYC
-        if doc_type == "other":
+        elif doc_type == "other":
             file_path = f"finance_documents/{file}"
             bucket_name = Constants.BUCKET_FOR_FINANCE_DOCUMENTS
+        elif doc_type == "photos":
+            file_path = f"photographs/{file}"
+            bucket_name = Constants.BUCKET_FOR_PHOTOGRAPHS_DOCUMENTS
+        else:
             ...
         s3_conn = make_s3_connection()
         file_url = upload_file_to_s3_bucket(
@@ -134,7 +138,10 @@ class DocumentsUploadVIew(APIView):
         )
         if file_url:
             data["file"] = file_url
-        serializer = self.serializer_class(data=data)
+        if obj  :
+            serializer = self.serializer_class(obj ,data=data, partial=True)
+        else:
+            serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return serializer.data
@@ -154,7 +161,7 @@ class DocumentsUploadVIew(APIView):
                         doc_data['kyc'] = kyc_obj.pk
                         doc_data['document_name'] = doc_data.get('document_name').capitalize()
                         doc_data['document_type'] = data.get('document_type')
-                        document_res = self.save_document(data.get('file'), doc_data, data.get('document_type'))
+                        document_res = self.save_document(doc_data.get('file'), doc_data, data.get('document_type'))
                         response.append(document_res)
                     KYCDetails.objects.filter(pk = kyc_id).update(kyc_document_verified=True)
                 else:
@@ -166,10 +173,14 @@ class DocumentsUploadVIew(APIView):
                 if Applicants.objects.filter(application_id = app_id).exists():
                     applicant = Applicants.objects.get(application_id = app_id)
                     for doc_data in eval(data.get('documents')):
-                        doc_data['application'] = applicant.pk
-                        doc_data['document_name'] = doc_data.get('document_name').capitalize()
-                        doc_data['document_type'] = data.get('document_type')
-                        document_res = self.save_document(data.get('file'), doc_data, data.get('document_type'))                
+                        if data.get('document_type') == 'other':
+                            doc_data['application'] = applicant.pk
+                            doc_data['document_name'] = doc_data.get('document_name').capitalize()
+                            doc_data['document_type'] = data.get('document_type')
+                        elif data.get('document_type') == 'photos':
+                            doc_data['document_type'] = data.get('document_type')
+                            doc_data['application'] = applicant.pk
+                        document_res = self.save_document(doc_data.get('file'), doc_data, data.get('document_type'))                
                         response.append(document_res)
                 else:
                     return Response(
@@ -184,3 +195,54 @@ class DocumentsUploadVIew(APIView):
                 response_data(True, "Something went wrong"),
                 status=status.HTTP_400_BAD_REQUEST,
             )
+    
+    def get(self, request):
+        application_id = request.query_params.get('application_id')
+        kyc_id = request.query_params.get('kyc_id')
+        document_type = request.query_params.get('document_type')
+        if application_id:
+            data = self.queryset.filter(application__application_id = application_id,document_type = document_type)
+        elif kyc_id:
+            data = self.queryset.filter(kyc__uuid = kyc_id,document_type = 'kyc')
+        else:
+            return Response(
+                response_data(True, "Please pass kyc or application id"), status.HTTP_400_BAD_REQUEST
+            )
+        serializer = self.serializer_class(data, many=True  )
+        if serializer:
+            return Response(
+            response_data(False, "Documents Lists", serializer.data),
+            status=status.HTTP_200_OK,
+        )
+        else:
+            return Response(
+                response_data(True, "Something went wrong"),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def put(self, request):
+        data = request.data.copy()
+        
+        documents_data = eval(data.get('documents'))
+        response = []
+        for doc_data in documents_data:
+            doc_data= {k: v for k, v in doc_data.items() if k not in ['application', 'kyc']}
+            if self.queryset.filter(uuid=doc_data['uuid']).exists():
+                queryset = self.queryset.get(uuid=doc_data['uuid'])
+                if isinstance(data['file'], str):
+                    serializer = self.serializer_class(queryset)
+                    response.append(serializer.data)
+                else:
+                    document_res = self.save_document(doc_data.get('file'), doc_data, doc_data.get('document_type'), queryset)
+                    if document_res:
+                        response.append(document_res)
+                    else:
+                        return Response(
+                            response_data(True, "Something went wrong.", serializer.errors),
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+        return Response(
+            response_data(False, "Successfully updated.", response),
+            status.HTTP_200_OK,
+        )
+        
