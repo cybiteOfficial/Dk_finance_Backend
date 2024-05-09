@@ -2,9 +2,10 @@ from django.db import models
 from choices import Choices
 from applicants.models import Applicants
 from utils import generate_CollateralID
-from user_auth.models import Comments
+from user_auth.models import Comments, BaseModel
 
-class CollateralDetails(models.Model):
+
+class CollateralDetails(BaseModel):
     collateral_id = models.CharField(max_length=255, default=generate_CollateralID, unique=True)
     applicant = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING, related_name='Applicant_collateral')
     collateralType = models.CharField(max_length=255, null=True, blank=True)

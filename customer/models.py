@@ -6,12 +6,12 @@ from choices import Choices
 from user_auth.models import Comments
 
 class CustomerDetails(BaseModel):
-    
+    role = models.CharField(max_length=255, null=True, blank=True, default="applicant")
     cif_id = models.CharField(max_length=255, default=generate_customerID, unique=True)
     applicant = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING, related_name='applicant')
 
     # common for android and admin
-    title = models.CharField(max_length=50, choices=Choices.TITLE_CHOICES, null=True, blank=True)
+    title = models.CharField(max_length=50, null=True, blank=True)
     firstName = models.CharField(max_length=255)
     lastName = models.CharField(max_length=255)
     middle_name = models.CharField(max_length=30, null=True, blank=True)

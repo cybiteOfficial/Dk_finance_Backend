@@ -51,6 +51,8 @@ class CollateralDetailsAPIView(APIView):
             if CollateralDetails.objects.filter(collateral_id=collateral_id).exists():
                 collateral_obj = CollateralDetails.objects.get(collateral_id=collateral_id)
                 serializer = self.serializer_class(collateral_obj, data=data)
+            else:
+                serializer = self.serializer_class(data=data)
                
         else:
             serializer = self.serializer_class(data=data)

@@ -175,9 +175,12 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
             per_addr = data.get('permanent_address', None)
             permanent_address = eval(per_addr) if per_addr else None
             customer_id = request.query_params.get('customer_id')
+
             customer_obj = self.get_customer(customer_id)
 
             if customer_obj:
+                doc_data= {k: v for k, v in customer_obj.items() if k not in ['applicant', 'comment']}
+
                 if request.FILES.get('profile_photo'):
                     file_obj = request.FILES.get('profile_photo')
                     bucket_name = Constants.BUCKET_FOR_PROFILE_PHOTOS
