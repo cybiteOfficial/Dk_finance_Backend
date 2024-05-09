@@ -32,6 +32,9 @@ class CafFomAPIView(APIView):
             return Response(response_data(True, "Applicant not found"), status=status.HTTP_400_BAD_REQUEST)
         
         if CustomerDetails.objects.filter(cif_id=customer_id, applicant__application_id = application_id).exists():
+            comment = save_comment(data.get('comment'))
+            if comment:
+                data['comment'] = comment.pk
             customer_obj = CustomerDetails.objects.get(cif_id=customer_id, applicant__application_id = application_id)
             data['pdWith'] = customer_obj.pk
         else:

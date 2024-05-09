@@ -169,17 +169,18 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
     def put(self, request):
         try:
             data = request.data.copy()
-            customer_data = eval(data.get('customer_data'))
+            is_permanent = eval(data.get('is_permanent').capitalize())
+            customer_data = json.loads(data.get('customer_data'))
             cur_addr = data.get('current_address')
-            current_address = eval(cur_addr) if cur_addr else None
+            current_address = json.loads(cur_addr) if cur_addr else None
             per_addr = data.get('permanent_address', None)
-            permanent_address = eval(per_addr) if per_addr else None
+            permanent_address = json.loads(per_addr) if per_addr else None
             customer_id = request.query_params.get('customer_id')
 
             customer_obj = self.get_customer(customer_id)
-
+            # response = []
             if customer_obj:
-                doc_data= {k: v for k, v in customer_obj.items() if k not in ['applicant', 'comment']}
+                customer_data= {k: v for k, v in customer_data.items() if k not in ['applicant', 'comment']}
 
                 if request.FILES.get('profile_photo'):
                     file_obj = request.FILES.get('profile_photo')
@@ -191,34 +192,85 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     )
                     if file_url:
                         customer_data['profile_photo'] = file_url
-
                 serializer = self.serializer_class(customer_obj, customer_data, partial=True)
                 if serializer.is_valid():
-                    customer_serializer_data = serializer.save()
-                    if eval(data.get('is_permanent')) == True:
-                        if CustomerAddress.objects.filter(customer__cif_id = customer_id, is_permanent = True, is_current= False).exists():
-                            CustomerAddress.objects.get(customer__cif_id = customer_id, is_permanent = True, is_current= False).delete()
-                            cutomer_address_obj = CustomerAddress.objects.filter(customer__cif_id = customer_id, is_permanent = False, is_current= True)
-                            current_address['is_current'] = True
-                            current_address['is_permanent'] = True
-                            current_address_serializer_data = self.update_address(cutomer_address_obj, current_address)
-                    elif eval(data.get('is_permanent')) == False:
-                        if CustomerAddress.objects.filter(customer__cif_id = customer_id, is_permanent = True, is_current= False).exists():
-                            cutomer_address_obj = CustomerAddress.objects.get(customer__cif_id = customer_id, is_permanent = True, is_current= False)
-                            permanent_address_serializer_data = self.update_address(cutomer_address_obj, permanent_address)
-                        else:
-                            if CustomerAddress.objects.filter(customer__cif_id = customer_id, is_permanent = True, is_current= True).exists():
-                                cutomer_address_obj = CustomerAddress.objects.get(customer__cif_id = customer_id, is_permanent = True, is_current= True)
-                                cutomer_address_obj.is_permanent = False
-                                cutomer_address_obj.save()
-                                permanent_address_serializer_data = self.save_address(permanent_address)
-                    else:
-                        if CustomerAddress.objects.filter(customer__cif_id = customer_id, is_current= False).exists():
-                            customer_obj = CustomerAddress.objects.get(customer__cif_id = customer_id, is_current= False)
-                            current_address_serializer_data= self.update_address(customer_obj, current_address)
+                    serializer.save()
+                    customer_serializer_data = serializer.data
+                    if current_address.get('uuid'):
+                        current_address= {k: v for k, v in customer_data.items() if k not in ['is_current', 'is_permanent', 'customer']}
 
+                        if CustomerAddress.objects.filter(uuid = current_address.get('uuid')).exists():
+                            current_obj = CustomerAddress.objects.get(uuid = current_address.get('uuid'))
+                            serializer = AddressSerializer(current_obj, current_address, partial=True)
+                            if serializer.is_valid():
+                                serializer.save()
+                                current_address_serializer_data = serializer.data
+                            else:
+                                return Response(
+                                    response_data(True, "Current address is not updated", serializer.errors),
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                )
+                    if is_permanent == True:
+                        permanent_address= {k: v for k, v in customer_data.items() if k not in ['is_current', 'is_permanent', 'customer']}
+
+                        if CustomerAddress.objects.filter(uuid = permanent_address.get('uuid'),is_current=False, is_permanent=True).exists():
+                            CustomerAddress.objects.get(uuid = permanent_address.get('uuid'),is_current=False, is_permanent=True).delete()
+                            current_obj = CustomerAddress.objects.get(uuid = current_address.get('uuid'))
+                            current_obj.is_current = True
+                            current_obj.is_permanent = True
+                            current_obj.save()
+                            serializer = AddressSerializer(current_obj)
+                            permanent_address_serializer_data = serializer.data
+                    elif is_permanent == False:
+                        if CustomerAddress.objects.filter(uuid = permanent_address.get('uuid'), is_permanent = True, is_current= True).exists():
+                            cutomer_address_obj = CustomerAddress.objects.get(uuid = permanent_address.get('uuid'), is_permanent = True, is_current= True)
+                            cutomer_address_obj.is_permanent = False
+                            cutomer_address_obj.save()
+                            serializer = AddressSerializer(cutomer_address_obj)
+                            current_address_serializer_data = serializer.data
+                            permanent_address['is_current'] = False
+                            permanent_address['is_permanent'] = True
+                            serializer = AddressSerializer(data=permanent_address)
+                            if serializer.is_valid():
+                                serializer.save()
+                                permanent_address_serializer_data = serializer.data
+                            else:
+                                return Response(
+                                    response_data(True, "permanent object is not updated", serializer.errors),
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                )
+                        else:
+                            if CustomerAddress.objects.filter(uuid = permanent_address.get('uuid'), is_permanent = True, is_current= False).exists():
+                                cutomer_address_obj = CustomerAddress.objects.get(uuid = permanent_address.get('uuid'), is_permanent = True, is_current= False)
+                                serializer = AddressSerializer(cutomer_address_obj, permanent_address, partial=True)
+                                if serializer.is_valid():
+                                    serializer.save()
+                                    permanent_address_serializer_data = serializer.data
+                                else:
+                                    return Response(
+                                        response_data(True, "permanent address is not updated", serializer.errors),
+                                        status=status.HTTP_400_BAD_REQUEST,
+                                    )
+                    else:
+                        if CustomerAddress.objects.filter(uuid = permanent_address.get('uuid')).exists():
+                            current_obj = CustomerAddress.objects.get(uuid = permanent_address.get('uuid'))
+                            serializer = AddressSerializer(current_obj, permanent_address, partial=True)
+                            if serializer.is_valid():
+                                serializer.save()
+                                permanent_address_serializer_data = serializer.data
+                            else:
+                                return Response(
+                                    response_data(True, "Current address is not updated", serializer.errors),
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                )
+
+                    response = {
+                        "customer_data":customer_serializer_data,
+                        "current_address": current_address_serializer_data,
+                        "permanent_address": permanent_address_serializer_data
+                    }
                     return Response(
-                        response_data(False, "Successfully updated.", serializer.data),
+                        response_data(False, "Successfully updated.", response),
                         status.HTTP_200_OK,
                     )
                 else:
