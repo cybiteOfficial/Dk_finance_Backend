@@ -12,6 +12,7 @@ from utils import response_data, save_comment, generate_OrderID
 from pagination import CommonPagination
 from choices import Choices
 from django.db import transaction
+from kyc.models import KYCDetails, DocumentsUpload
 
 
 class ApplicantAPIView(APIView):
@@ -103,11 +104,13 @@ class CreateAppForPaymentReference(APIView):
 
     def post(self, request):
         order_id = generate_OrderID()
+        kyc_id = request.data.get('kyc_id')
         if order_id:
             Payment.objects.create(order_id=order_id)
             paymt_obj = Payment.objects.get(order_id=order_id)
         Applicants.objects.create(paymentedetails=paymt_obj)
         applicant = Applicants.objects.get(paymentedetails=paymt_obj)
+        DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
         serializer = self.serializer_class(applicant)
         return Response(
             response_data(False, "Applicant created successfully", serializer.data),

@@ -102,6 +102,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
     def post(self, request):
 
         data = request.data.copy()
+        import pdb;pdb.set_trace()
         customer_data = json.loads(data.get('customer_data'))
         if Applicants.objects.filter(application_id = customer_data['application_id']).exists():
             applicant = Applicants.objects.get(application_id = customer_data['application_id'])
@@ -135,7 +136,8 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 permanent_address_serializer_data = {}
                 if current_address:
                     current_address['customer'] = customer_obj.pk
-                    if eval(data.get('is_permanent')) == True:
+                    permanent_status = data.get('is_permanent')
+                    if permanent_status and eval(data.get('is_permanent').capitalize()) == True:
                         current_address['is_current'] = True
                         current_address['is_permanent'] = True
                         current_address_serializer_data = self.save_address(current_address)

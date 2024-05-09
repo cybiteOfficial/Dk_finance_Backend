@@ -12,10 +12,10 @@ from user_auth.models import Comments
 class Applicants(BaseModel):
     
     application_id = models.CharField(max_length=255, default=generate_applicationID)
-    lead = models.OneToOneField(Leads, on_delete=models.CASCADE, related_name='leads', null=True)
+    lead = models.OneToOneField(Leads, on_delete=models.CASCADE, related_name='leads', null=True, blank=True)
     paymentedetails = models.OneToOneField(Payment, on_delete=models.CASCADE, related_name='paymentdetail')
     status = models.CharField(max_length=200, choices= Choices.APPLICATION_STATUS_CHOICES, default='ro_phase')
-    description = models.TextField(null=True)
+    description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 
     def __str__(self) -> str:
