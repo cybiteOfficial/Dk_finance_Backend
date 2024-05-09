@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import CafDetails
+from .models import CustomerApplicationForm
 from .serializers import CafSerializer
 from applicants.models import Applicants
 from utils import response_data, save_comment
@@ -11,34 +11,38 @@ from customer.models import CustomerDetails
 class CafFomAPIView(APIView):
     serializer_class = CafSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = CafDetails.objects.all()
+    queryset = CustomerApplicationForm.objects.all()
 
     def get_caf_detail(self, pk):
         try:
             return self.queryset.get(caf_id=pk)
-        except CafDetails.DoesNotExist:
+        except CustomerApplicationForm.DoesNotExist:
             return None
     
     def post(self, request):
         data = request.data.copy()
         caf_id = data.get('caf_id')
-        if caf_id and CafDetails.objects.filter(caf_id=caf_id).exists():
-            caf_obj = CafDetails.objects.get(caf_id=caf_id)
+        customer_id = data.get('pdWith')
+        application_id = data.get('applicant_id')
+
+        if Applicants.objects.filter(application_id=application_id).exists():
+            applicant = Applicants.objects.get(application_id=application_id)
+            data['applicant'] = applicant.pk
+        else:
+            return Response(response_data(True, "Applicant not found"), status=status.HTTP_400_BAD_REQUEST)
+        
+        if CustomerDetails.objects.filter(cif_id=customer_id, applicant__application_id = application_id).exists():
+            customer_obj = CustomerDetails.objects.get(cif_id=customer_id, applicant__application_id = application_id)
+            data['pdWith'] = customer_obj.pk
+        else:
+            return Response(response_data(True, "customer not found"), status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        if caf_id and CustomerApplicationForm.objects.filter(caf_id=caf_id).exists():
+            caf_obj = CustomerApplicationForm.objects.get(caf_id=caf_id)
             serializer = self.serializer_class(caf_obj, data=data)
         else:
-            application_id = data.get('applicant_id')
-            customer_id = data.get('customer_id')
-            if Applicants.objects.filter(application_id=application_id).exists():
-                applicant = Applicants.objects.get(application_id=application_id)
-                data['applicant'] = applicant.pk
-            else:
-                return Response(response_data(True, "Applicant not found"), status=status.HTTP_400_BAD_REQUEST)
 
-            if CustomerDetails.objects.filter(cif_id=customer_id, applicant__application_id = application_id).exists():
-                customer_obj = CustomerDetails.objects.get(cif_id=customer_id, applicant__application_id = application_id)
-                data['customer'] = customer_obj.pk
-            else:
-                return Response(response_data(True, "customer not found"), status=status.HTTP_400_BAD_REQUEST)
 
             comment = save_comment(data.get('comment'))
             if comment:
@@ -53,14 +57,15 @@ class CafFomAPIView(APIView):
 
     def get(self, request):
         try:
-            caf_id = request.query_params.get('caf_id')
-            if caf_id:
-                if self.queryset.filter(caf_id=caf_id).exists():
-                    caf_obj = self.queryset.get(caf_id=caf_id)
+            application_id = request.query_params.get('application_id')
+            
+            if application_id:
+                if self.queryset.filter(applicant__application_id=application_id).exists():
+                    caf_obj = self.queryset.get(applicant__application_id=application_id)
                     serializer = self.serializer_class(caf_obj)
-                    return Response(response_data(False, "Collateral details found", serializer.data), status=status.HTTP_200_OK)
+                    return Response(response_data(False, "CAF details found", serializer.data), status=status.HTTP_200_OK)
                 else:
-                    return Response(response_data(True, "Collateral not found"), status=status.HTTP_404_NOT_FOUND)
+                    return Response(response_data(True, "CAF not found"), status=status.HTTP_404_NOT_FOUND)
             else:
                 return Response(response_data(True, "CAF ID not provided"), status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

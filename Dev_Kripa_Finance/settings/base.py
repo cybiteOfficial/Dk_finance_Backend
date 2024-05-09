@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'phonepay',
     'loan',
     'collateral_details',
-    'caf_form'
+    'customer_application',
 ]
 
 MIDDLEWARE = [
