@@ -150,7 +150,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 response = {
                     "customer_data": serializer.data,
                     "current_address": current_address_serializer_data if current_address_serializer_data else {},
-                    "permanent_address": permanent_address_serializer_data if permanent_address_serializer_data else {},
+                    "permanent_address": permanent_address_serializer_data if permanent_address_serializer_data else current_address_serializer_data,
                 }
                 return Response(
                     response_data(False, "Customer created successfully", response),
