@@ -109,7 +109,6 @@ class KYCVIew(APIView):
         else:
             return Response(response_data(True, "KYC object not found."), status.HTTP_200_OK)
 
-
 class DocumentsUploadVIew(APIView):
     serializer_class = DocumentUploadSerializer
     permission_classes = (IsAuthenticated,)
@@ -120,58 +119,68 @@ class DocumentsUploadVIew(APIView):
             return self.queryset.get(pk=pk)
         except DocumentsUpload.DoesNotExist:
             return None
-    
-    def post(self, request):
-        data = request.data.copy()
-        kyc_id = data.get('kyc_id', None)
-        app_id = data.get('application_id', None)
-        file_obj = request.FILES.get('file')
 
-        if data.get('document_type') == 'kyc' and kyc_id:
-            if KYCDetails.objects.filter(pk=kyc_id).exists():  
-                kyc_obj = KYCDetails.objects.get(pk=kyc_id)
-                data['kyc'] = kyc_obj.pk
-                data['document_name'] = data.get('document_name').capitalize()
-                file_path = f"KYC_documents/{file_obj}"
-                bucket_name = Constants.BUCKET_FOR_KYC
-            else:
-                return Response(
-                    response_data(True, "KYC details not found"), status.HTTP_400_BAD_REQUEST
-                )
-        elif app_id:
-            if Applicants.objects.filter(application_id = app_id).exists():
-                applicant = Applicants.objects.get(application_id = app_id)
-                data['application'] = applicant.pk
-            else:
-                return Response(
-                    response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
-                )
-            file_path = f"finance_documents/{file_obj}"
+    def save_document(self, file, data, doc_type):
+        if doc_type == "kyc":
+            file_path = f"KYC_documents/{file}"
+            bucket_name = Constants.BUCKET_FOR_KYC
+        if doc_type == "other":
+            file_path = f"finance_documents/{file}"
             bucket_name = Constants.BUCKET_FOR_FINANCE_DOCUMENTS
-
+            ...
         s3_conn = make_s3_connection()
         file_url = upload_file_to_s3_bucket(
-            s3_conn, file_obj, bucket_name, file_path
+            s3_conn, file, bucket_name, file_path
         )
         if file_url:
             data["file"] = file_url
-            comment = save_comment(data.get('comment'))
-            if comment:
-                data['comment'] = comment.pk
-            serializer = self.serializer_class(data=data)
-            if serializer.is_valid():
-                serializer.save()
-                if data.get('document_type') == 'kyc' and kyc_id:
-                    KYCDetails.objects.filter(uuid = kyc_id).update(kyc_document_verified=True)
-                return Response(
-                    response_data(False, "Document uploaded successfully", serializer.data),
-                    status=status.HTTP_200_OK,
-                )
-            else:
-                return Response(
-                    response_data(True, "Something went wrong", serializer.errors),
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            
+        serializer = self.serializer_class(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return serializer.data
+        else:
+            return False
 
-            
+    def post(self, request):
+        try:
+            data = request.data.copy()
+            kyc_id = data.get('kyc_id', None)
+            app_id = data.get('application_id', None)
+            response = []
+            if data.get('document_type') == 'kyc' and kyc_id:
+                if KYCDetails.objects.filter(pk=kyc_id).exists():
+                    kyc_obj = KYCDetails.objects.get(pk=kyc_id)
+                    for doc_data in eval(data.get('documents')):
+                        doc_data['kyc'] = kyc_obj.pk
+                        doc_data['document_name'] = doc_data.get('document_name').capitalize()
+                        doc_data['document_type'] = data.get('document_type')
+                        document_res = self.save_document(data.get('file'), doc_data, data.get('document_type'))
+                        response.append(document_res)
+                    KYCDetails.objects.filter(pk = kyc_id).update(kyc_document_verified=True)
+                else:
+                    return Response(
+                        response_data(True, "KYC details not found"), status.HTTP_400_BAD_REQUEST
+                    )
+            elif app_id:
+
+                if Applicants.objects.filter(application_id = app_id).exists():
+                    applicant = Applicants.objects.get(application_id = app_id)
+                    for doc_data in eval(data.get('documents')):
+                        doc_data['application'] = applicant.pk
+                        doc_data['document_name'] = doc_data.get('document_name').capitalize()
+                        doc_data['document_type'] = data.get('document_type')
+                        document_res = self.save_document(data.get('file'), doc_data, data.get('document_type'))                
+                        response.append(document_res)
+                else:
+                    return Response(
+                        response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
+                    )
+            return Response(
+                response_data(False, "Document uploaded successfully", response),
+                status=status.HTTP_200_OK,
+            )
+        except:
+            return Response(
+                response_data(True, "Something went wrong"),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
