@@ -197,7 +197,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     serializer.save()
                     customer_serializer_data = serializer.data
                     if current_address.get('uuid'):
-                        current_address= {k: v for k, v in customer_data.items() if k not in ['is_current', 'is_permanent', 'customer']}
+                        current_address= {k: v for k, v in current_address.items() if k not in ['is_current', 'is_permanent', 'customer']}
 
                         if CustomerAddress.objects.filter(uuid = current_address.get('uuid')).exists():
                             current_obj = CustomerAddress.objects.get(uuid = current_address.get('uuid'))
@@ -211,7 +211,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                                     status=status.HTTP_400_BAD_REQUEST,
                                 )
                     if is_permanent == True:
-                        permanent_address= {k: v for k, v in customer_data.items() if k not in ['is_current', 'is_permanent', 'customer']}
+                        permanent_address= {k: v for k, v in permanent_address.items() if k not in ['is_current', 'is_permanent', 'customer']}
 
                         if CustomerAddress.objects.filter(uuid = permanent_address.get('uuid'),is_current=False, is_permanent=True).exists():
                             CustomerAddress.objects.get(uuid = permanent_address.get('uuid'),is_current=False, is_permanent=True).delete()
