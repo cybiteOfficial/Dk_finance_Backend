@@ -18,7 +18,7 @@ from kyc.models import KYCDetails, DocumentsUpload
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Applicants.objects.all()
+    queryset = Applicants.objects.all().order_by('-created_at')
     pagination_class = CommonPagination
 
     def get(self, request):
@@ -103,6 +103,7 @@ class CreateAppForPaymentReference(APIView):
     pagination_class = CommonPagination
 
     def post(self, request):
+        print(request.data)
         order_id = generate_OrderID()
         kyc_id = request.data.get('kyc_id')
         if order_id:

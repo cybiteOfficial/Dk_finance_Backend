@@ -55,12 +55,13 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 customer_obj = self.get_customer(customer_id)
                 if customer_obj:
                     serializer = self.serializer_class(customer_obj)
-                    address_data = CustomerAddress.objects.filter(customer__cif_id = customer_id)
+                    customer_uuid = serializer.data['uuid']
+                    address_data = CustomerAddress.objects.filter(customer_id = customer_uuid)
                     response['customer_data'] = serializer.data
                     if address_data:
                         for data in address_data:
                             if data.is_permanent == True and data.is_current == True:
-                                address_serializer = AddressSerializer(address_data)
+                                address_serializer = AddressSerializer(data)
                                 response['current_address'] = address_serializer.data
                                 response['permanent_address'] = address_serializer.data
                             else:
@@ -96,7 +97,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     )
         except Exception as e:
             return Response(
-                response_data(True, "Something went wrong"), status.HTTP_400_BAD_REQUEST
+                response_data(True, str(e)), status.HTTP_400_BAD_REQUEST
             )
 
     def post(self, request):
