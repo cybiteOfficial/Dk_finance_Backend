@@ -18,7 +18,7 @@ from kyc.models import KYCDetails, DocumentsUpload
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Applicants.objects.all().order_by('-created_at')
+    queryset = Applicants.objects.all()
     pagination_class = CommonPagination
 
     def get(self, request):
@@ -141,6 +141,11 @@ class UpdateApplicationStatus(APIView):
                 ]
                 with transaction.atomic():
                     AuditTrail.objects.bulk_create(audit_trail)
+                # with transaction.atomic():
+                for applicant in applicant_to_update:
+                    # AuditTrail.objects.create(application_id=applicant, current_status=key, updated_status=new_status, updated_by=request.user)
+                    print(Applicants.objects.filter(application_id = applicant))
+                        
                 return Response(response_data(True, "Status updated successfully"), status=status.HTTP_200_OK)
         except:
             return Response(response_data(True, "status not updated"), status=status.HTTP_400_BAD_REQUEST)
