@@ -7,6 +7,7 @@ from .serializers import ApplicantsSerializer
 from .models import Applicants, AuditTrail
 from leads.models import Leads
 from phonepay.models import Payment
+from user_auth.models import User
 
 from utils import response_data, save_comment, generate_OrderID
 from pagination import CommonPagination
@@ -18,12 +19,17 @@ from kyc.models import KYCDetails, DocumentsUpload
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Applicants.objects.all()
+    queryset = Applicants.objects.all().order_by('-updated_at')
     pagination_class = CommonPagination
 
     def get(self, request):
         try:
             application_id = request.query_params.get('application_id', None)
+            user_email = request.user.email  
+
+            abc = User.objects.filter(email = user_email)
+            for obj in abc:
+                user_type = obj.user_type
             
             if application_id:
                 if self.queryset.filter(application_id = application_id).exists():
@@ -32,9 +38,16 @@ class ApplicantAPIView(APIView):
                     return Response(
                     response_data(True, "Not found any Applicant."), status.HTTP_200_OK
                 )
-            else:
+            elif user_type == 'md' or user_type == 'cluster':
                 applicant_objs = self.queryset.all()
-            
+
+            else:
+                user = User.objects.filter(email = user_email)
+                user_uuid = user[0].pk
+                applicants_updated_by_user = AuditTrail.objects.filter(updated_by = user_uuid).values_list('application_id', flat=True)
+                applicant_objs = self.queryset.filter(uuid__in = applicants_updated_by_user)
+
+                
             paginator = self.pagination_class()
             paginated_res = paginator.paginate_queryset(applicant_objs, request)
         
@@ -135,17 +148,13 @@ class UpdateApplicationStatus(APIView):
                 new_status = status_list.get(key)
                 applicant_to_update = Applicants.objects.filter(application_id__in=app_ids)
                 applicant_to_update.update(status= new_status)
-                audit_trail = [
-                    AuditTrail(application_id=app, current_status=key, updated_status=new_status, updated_by=request.user)
-                    for app in applicant_to_update
-                ]
+
                 with transaction.atomic():
-                    AuditTrail.objects.bulk_create(audit_trail)
-                # with transaction.atomic():
-                for applicant in applicant_to_update:
-                    # AuditTrail.objects.create(application_id=applicant, current_status=key, updated_status=new_status, updated_by=request.user)
-                    print(Applicants.objects.filter(application_id = applicant))
+                    for applicant in applicant_to_update:
+                        audit_trail = AuditTrail.objects.create(application_id=applicant, current_status=key, updated_status=new_status, updated_by=request.user)
+                        created_at = audit_trail.created_at
+                        Applicants.objects.filter(application_id = applicant).update(updated_at = created_at)
                         
-                return Response(response_data(True, "Status updated successfully"), status=status.HTTP_200_OK)
+                return Response(response_data(False, "Status updated successfully"), status=status.HTTP_200_OK)
         except:
             return Response(response_data(True, "status not updated"), status=status.HTTP_400_BAD_REQUEST)
