@@ -157,42 +157,33 @@ class DocumentsUploadVIew(APIView):
             if data.get('document_type') == 'kyc' and kyc_id:
                 if KYCDetails.objects.filter(pk=kyc_id).exists():
                     kyc_obj = KYCDetails.objects.get(pk=kyc_id)
-                    for doc_data in eval(data.get('documents')):
-                        doc_data['kyc'] = kyc_obj.pk
-                        doc_data['document_name'] = doc_data.get('document_name').capitalize()
-                        doc_data['document_type'] = data.get('document_type')
-                        document_res = self.save_document(doc_data.get('file'), doc_data, data.get('document_type'))
-                        response.append(document_res)
+                    data['kyc'] = kyc_obj.pk
+                    document_res = self.save_document(data.get('file'), data, data.get('document_type'))
+                    response.append(document_res)
                     KYCDetails.objects.filter(pk = kyc_id).update(kyc_document_verified=True)
                 else:
                     return Response(
                         response_data(True, "KYC details not found"), status.HTTP_400_BAD_REQUEST
                     )
+                
             elif app_id:
-
                 if Applicants.objects.filter(application_id = app_id).exists():
                     applicant = Applicants.objects.get(application_id = app_id)
-                    for doc_data in eval(data.get('documents')):
-                        if data.get('document_type') == 'other':
-                            doc_data['application'] = applicant.pk
-                            doc_data['document_name'] = doc_data.get('document_name').capitalize()
-                            doc_data['document_type'] = data.get('document_type')
-                        elif data.get('document_type') == 'photos':
-                            doc_data['document_type'] = data.get('document_type')
-                            doc_data['application'] = applicant.pk
-                        document_res = self.save_document(doc_data.get('file'), doc_data, data.get('document_type'))                
-                        response.append(document_res)
+                    data['application'] = applicant.pk
+                    document_res = self.save_document(data.get('file'), data, data.get('document_type'))
+                    response.append(document_res)        
                 else:
                     return Response(
                         response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
                     )
+                
             return Response(
                 response_data(False, "Document uploaded successfully", response),
                 status=status.HTTP_200_OK,
             )
-        except:
+        except Exception as e:
             return Response(
-                response_data(True, "Something went wrong"),
+                response_data(True, str(e)),
                 status=status.HTTP_400_BAD_REQUEST,
             )
     
