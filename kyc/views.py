@@ -153,13 +153,23 @@ class DocumentsUploadVIew(APIView):
             data = request.data.copy()
             kyc_id = data.get('kyc_id', None)
             app_id = data.get('application_id', None)
+            documents = data.get('documents')
+            
+            files = []
+            for uploaded_file in data.getlist('file'):
+                files.append(uploaded_file)
+
             response = []
+            file_num = 0
             if data.get('document_type') == 'kyc' and kyc_id:
                 if KYCDetails.objects.filter(pk=kyc_id).exists():
                     kyc_obj = KYCDetails.objects.get(pk=kyc_id)
-                    data['kyc'] = kyc_obj.pk
-                    document_res = self.save_document(data.get('file'), data, data.get('document_type'))
-                    response.append(document_res)
+                    for document in eval(documents):
+                        document['kyc'] = kyc_obj.pk
+                        document['document_type'] = data.get('document_type')
+                        document_res = self.save_document(files[file_num], document, document['document_type'])
+                        response.append(document_res)  
+                        file_num += 1
                     KYCDetails.objects.filter(pk = kyc_id).update(kyc_document_verified=True)
                 else:
                     return Response(
@@ -169,9 +179,12 @@ class DocumentsUploadVIew(APIView):
             elif app_id:
                 if Applicants.objects.filter(application_id = app_id).exists():
                     applicant = Applicants.objects.get(application_id = app_id)
-                    data['application'] = applicant.pk
-                    document_res = self.save_document(data.get('file'), data, data.get('document_type'))
-                    response.append(document_res)        
+                    for document in eval(documents):
+                        document['application'] = applicant.pk
+                        document['document_type'] = data.get('document_type')
+                        document_res = self.save_document(files[file_num], document, document['document_type'])
+                        response.append(document_res)    
+                        file_num += 1
                 else:
                     return Response(
                         response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
@@ -186,7 +199,7 @@ class DocumentsUploadVIew(APIView):
                 response_data(True, str(e)),
                 status=status.HTTP_400_BAD_REQUEST,
             )
-    
+        
     def get(self, request):
         application_id = request.query_params.get('application_id')
         kyc_id = request.query_params.get('kyc_id')
