@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate
 
 from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
-from utils import response_data, OauthGetToken
+from utils import response_data, OauthGetToken, save_comment
 
 class SignUpView(APIView):
     permission_classes = (AllowAny,)

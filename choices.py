@@ -6,6 +6,13 @@ class Choices:
         ('other', 'Other'),
     ]
 
+    TITLE_CHOICES = [
+        ('miss', 'Miss'),
+        ('ms.', 'Ms.'),
+        ('mrs', 'Mrs.'),
+        ('mr.', 'Mr.')
+    ]
+
     USER_TYPE_CHOICES = [
         ("ro", "Ro"), 
         ("do", "Do"), 
@@ -27,7 +34,7 @@ class Choices:
         ('home_loan', 'HomeLoan'),
     ]
 
-    LEAD_SOURCE_TYPE = [
+    SOURCE_TYPE = [
         ('website', 'Website'),
         ('out_source', 'Out_Source')
     ]
@@ -39,7 +46,8 @@ class Choices:
 
     DOCUMENT_TYPE_CHOICES = [
         ('kyc', 'KYC'),
-        ('other', 'Other')
+        ('other', 'Other'),
+        ('photos', 'Photos')
     ]
 
     VERIFICATION_TYPE_CHOICES = [
@@ -48,6 +56,36 @@ class Choices:
     ]
 
     TRANSACTION_TYPE = [
-        (),
-        ()
+       ('purchase', 'Purchase'),
+        ('refinance', 'Refinance'),
+        ('construction', 'Construction'),
     ]
+    PAYMENT_STATUS = [
+        ('Initiated', 'Initiated'),
+        ('Pending', 'Pending'),
+        ('Successful', 'Successful'),
+        ('Failed', 'Failed'),
+    ]
+    
+    APPLICATION_STATUS_CHOICES = [
+        ('ro_phase', 'Review Phase'),
+        ('ap_phase', 'Approval Phase'),
+        ('rej_phase', 'Rejection Phase'),
+     ]
+    CUSTOMER_SEGMENT_CHOICES = [
+        ('segment1', 'Segment 1'),
+        ('segment2', 'Segment 2'),
+        ('segment3', 'Segment 3'),
+     ]
+    IS_EXISTING_CHOICES = [
+        ('Yes', 'Yes'),
+        ('No', 'No')
+    ]
+
+    FORWARD_STATUS_BINDING = {
+    "ro_phase":"do_phase",
+    "do_phase":"technicalofficer",
+    "technicalofficer":"bm_phase",
+    "bm_phase":"cluster",
+    "cluster":"md_phase",
+    }
