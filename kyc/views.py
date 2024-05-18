@@ -154,6 +154,7 @@ class DocumentsUploadVIew(APIView):
             kyc_id = data.get('kyc_id', None)
             app_id = data.get('application_id', None)
             documents = data.get('documents')
+            document_type = data.get('document_type')
             
             files = []
             for uploaded_file in data.getlist('file'):
@@ -161,12 +162,12 @@ class DocumentsUploadVIew(APIView):
 
             response = []
             file_num = 0
-            if data.get('document_type') == 'kyc' and kyc_id:
+            if document_type == 'kyc' and kyc_id:
                 if KYCDetails.objects.filter(pk=kyc_id).exists():
                     kyc_obj = KYCDetails.objects.get(pk=kyc_id)
                     for document in eval(documents):
                         document['kyc'] = kyc_obj.pk
-                        document['document_type'] = data.get('document_type')
+                        document['document_type'] = document_type
                         document_res = self.save_document(files[file_num], document, document['document_type'])
                         response.append(document_res)  
                         file_num += 1
@@ -179,12 +180,21 @@ class DocumentsUploadVIew(APIView):
             elif app_id:
                 if Applicants.objects.filter(application_id = app_id).exists():
                     applicant = Applicants.objects.get(application_id = app_id)
-                    for document in eval(documents):
-                        document['application'] = applicant.pk
-                        document['document_type'] = data.get('document_type')
-                        document_res = self.save_document(files[file_num], document, document['document_type'])
-                        response.append(document_res)    
-                        file_num += 1
+                    if document_type == 'other':
+                        for document in eval(documents):
+                            document['application'] = applicant.pk
+                            document['document_type'] = document_type
+                            document_res = self.save_document(files[file_num], document, document['document_type'])
+                            response.append(document_res)    
+                            file_num += 1
+                    elif document_type == 'photos':
+                        for i in range(len(files)):
+                            data['application'] = applicant.pk
+                            data['document_type'] = document_type
+                            document_res = self.save_document(files[file_num], data, data['document_type'])
+                            response.append(document_res)
+                            file_num += 1
+
                 else:
                     return Response(
                         response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST

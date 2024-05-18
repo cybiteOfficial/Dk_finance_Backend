@@ -86,6 +86,6 @@ class Choices:
     "ro_phase":"do_phase",
     "do_phase":"technicalofficer",
     "technicalofficer":"bm_phase",
-    "bm_phase":"md_phase",
-    "md_phase":"cluster",
+    "bm_phase":"cluster",
+    "cluster":"md_phase",
     }

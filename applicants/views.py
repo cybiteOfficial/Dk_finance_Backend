@@ -27,9 +27,9 @@ class ApplicantAPIView(APIView):
             application_id = request.query_params.get('application_id', None)
             user_email = request.user.email  
 
-            abc = User.objects.filter(email = user_email)
-            for obj in abc:
-                user_type = obj.user_type
+            user = User.objects.filter(email = user_email)
+            for details in user:
+                user_type = details.user_type
             
             if application_id:
                 if self.queryset.filter(application_id = application_id).exists():
@@ -38,14 +38,14 @@ class ApplicantAPIView(APIView):
                     return Response(
                     response_data(True, "Not found any Applicant."), status.HTTP_200_OK
                 )
+        
             elif user_type == 'md' or user_type == 'cluster':
                 applicant_objs = self.queryset.all()
 
             else:
                 user = User.objects.filter(email = user_email)
                 user_uuid = user[0].pk
-                applicants_updated_by_user = AuditTrail.objects.filter(updated_by = user_uuid).values_list('application_id', flat=True)
-                applicant_objs = self.queryset.filter(uuid__in = applicants_updated_by_user)
+                applicant_objs = self.queryset.filter(created_by = user_uuid)
 
                 
             paginator = self.pagination_class()
@@ -116,13 +116,16 @@ class CreateAppForPaymentReference(APIView):
     pagination_class = CommonPagination
 
     def post(self, request):
-        print(request.data)
+        user_email = request.user.email
         order_id = generate_OrderID()
         kyc_id = request.data.get('kyc_id')
+
+        created_by = User.objects.get(email = user_email)
+        
         if order_id:
             Payment.objects.create(order_id=order_id)
             paymt_obj = Payment.objects.get(order_id=order_id)
-        Applicants.objects.create(paymentedetails=paymt_obj)
+        Applicants.objects.create(paymentedetails=paymt_obj, created_by = created_by)
         applicant = Applicants.objects.get(paymentedetails=paymt_obj)
         DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
         serializer = self.serializer_class(applicant)
