@@ -23,4 +23,6 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
         representation = super(DocumentUploadSerializer, self).to_representation(instance)
         if instance.comment:
             representation['comment'] = instance.comment.comment
+        if instance.application:
+            representation['application'] = instance.application.application_id
         return representation

@@ -155,6 +155,8 @@ class DocumentsUploadVIew(APIView):
             app_id = data.get('application_id', None)
             documents = data.get('documents')
             document_type = data.get('document_type')
+            comment = save_comment(data.get('comment'))
+        
             
             files = []
             for uploaded_file in data.getlist('file'):
@@ -168,6 +170,9 @@ class DocumentsUploadVIew(APIView):
                     for document in eval(documents):
                         document['kyc'] = kyc_obj.pk
                         document['document_type'] = document_type
+                        document['description'] = data.get('description')
+                        if comment:
+                            document['comment'] = comment.pk
                         document_res = self.save_document(files[file_num], document, document['document_type'])
                         response.append(document_res)  
                         file_num += 1
@@ -184,13 +189,19 @@ class DocumentsUploadVIew(APIView):
                         for document in eval(documents):
                             document['application'] = applicant.pk
                             document['document_type'] = document_type
+                            document['description'] = data.get('description')
+                            if comment:
+                                document['comment'] = comment.pk
                             document_res = self.save_document(files[file_num], document, document['document_type'])
-                            response.append(document_res)    
+                            response.append(document_res)
                             file_num += 1
                     elif document_type == 'photos':
                         for i in range(len(files)):
                             data['application'] = applicant.pk
                             data['document_type'] = document_type
+                            data['description'] = data.get('description')
+                            if comment:
+                                data['comment'] = comment.pk
                             document_res = self.save_document(files[file_num], data, data['document_type'])
                             response.append(document_res)
                             file_num += 1
