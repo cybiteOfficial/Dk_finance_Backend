@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'loan',
     'collateral_details',
     'customer_application',
+    'print_document',
 ]
 
 MIDDLEWARE = [

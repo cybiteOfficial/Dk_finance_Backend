@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/v1/', include('loan.urls')),
     path('api/v1/', include('collateral_details.urls')),
     path('api/v1/', include('customer_application.urls')),
+    path('api/v1/', include('print_document.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

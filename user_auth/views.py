@@ -14,15 +14,17 @@ class SignUpView(APIView):
     user = get_user_model()
 
     def post(self, request):
+        data = request.data.copy()
+
         for field in ["gender", "first_name", "last_name"]:
-            if request.data.get(field):
-                request.data[field] = (
-                    request.data[field].lower()
+            if data.get(field):
+                data[field] = (
+                    data[field].lower()
                     if field == "gender"
-                    else request.data[field].capitalize()
+                    else data[field].capitalize()
                 )
 
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -48,11 +50,11 @@ class SignInView(APIView):
         if serializer.is_valid():
             user = authenticate(
                 request,
-                email=serializer.validated_data["email"],
+                username=serializer.validated_data["username"],
                 password=serializer.validated_data["password"],
             )
             if user:
-                response, status_code = OauthGetToken(data.get('email'), data.get('password'))
+                response, status_code = OauthGetToken(data.get('username'), data.get('password'))
                 if status_code ==  200:
                     return Response(
                         response_data(False, "Successfully login.", response.json()),
