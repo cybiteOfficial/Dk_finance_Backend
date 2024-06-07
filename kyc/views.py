@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url
 from leads.models import Leads
 from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
@@ -147,6 +147,20 @@ class DocumentsUploadVIew(APIView):
             return serializer.data
         else:
             return False
+        
+    def get_content_type(self, filename):
+        content_type = filename.split('.')[-1]
+        if content_type == 'png': 
+            content_type = 'image/png'
+        elif content_type == 'jpg' or content_type is 'jpeg':
+            content_type = 'image/jpeg'
+        elif content_type == 'pdf':
+            content_type = 'application/pdf'
+        elif content_type == 'txt':
+            content_type = 'text/plain'
+        elif content_type == 'docx':
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        return content_type
 
     def post(self, request):
         try:
@@ -225,6 +239,7 @@ class DocumentsUploadVIew(APIView):
         application_id = request.query_params.get('application_id')
         kyc_id = request.query_params.get('kyc_id')
         document_type = request.query_params.get('document_type')
+
         if application_id:
             data = self.queryset.filter(application__application_id = application_id,document_type = document_type)
         elif kyc_id:
@@ -233,7 +248,15 @@ class DocumentsUploadVIew(APIView):
             return Response(
                 response_data(True, "Please pass kyc or application id"), status.HTTP_400_BAD_REQUEST
             )
-        serializer = self.serializer_class(data, many=True  )
+
+        serializer = self.serializer_class(data, many=True)
+        for file in serializer.data:
+            file_url = file['file']
+            filename = file_url.split('/')[-1]
+            content_type = self.get_content_type(filename=filename)
+            presigned_url = create_presigned_url(filename=filename, doc_type=file['document_type'], content_type=content_type)
+            file['file'] = presigned_url
+
         if serializer:
             return Response(
             response_data(False, "Documents Lists", serializer.data),

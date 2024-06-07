@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
 import requests, base64, random, string
-
 from constant import Constants
+
+import logging
 import boto3, os
+from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 from cryptography.hazmat.primitives import hashes
@@ -41,7 +43,8 @@ def make_s3_connection():
     try:
         ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
         SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-        s3_conn_obj = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
+        REGION = os.environ.get('REGION')
+        s3_conn_obj = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY, region_name = REGION)
         return s3_conn_obj
     except:
         return None
@@ -55,6 +58,34 @@ def upload_file_to_s3_bucket(s3_conn, file, bucket_name, file_key):
         return str(file_url)
     except Exception as e:
         return False
+
+def create_presigned_url(filename, doc_type, content_type, expiration=3600):
+    s3_client = make_s3_connection()
+
+    if doc_type == "kyc":
+        bucket_name = Constants.BUCKET_FOR_KYC
+        object_name = f"KYC_documents/{filename}"
+    elif doc_type == "other":
+        bucket_name = Constants.BUCKET_FOR_FINANCE_DOCUMENTS
+        object_name = f"finance_documents/{filename}"
+    elif doc_type == "photos":
+        bucket_name = Constants.BUCKET_FOR_PHOTOGRAPHS_DOCUMENTS
+        object_name = f"photographs/{filename}"
+
+    try:
+        response = s3_client.generate_presigned_url('get_object',
+                                                    Params={'Bucket': bucket_name,
+                                                            'Key': object_name,
+                                                            'ResponseContentDisposition': 'inline',
+                                                            'ResponseContentType': content_type,
+                                                    },
+                                                    ExpiresIn=expiration)
+    except ClientError as e:
+        logging.error(e)
+        return None
+
+    return response
+
 
 def generate_leadID(length=6):
     """Generate a random Lead_id of specified length."""
