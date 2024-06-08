@@ -152,7 +152,7 @@ class DocumentsUploadVIew(APIView):
         content_type = filename.split('.')[-1]
         if content_type == 'png': 
             content_type = 'image/png'
-        elif content_type == 'jpg' or content_type is 'jpeg':
+        elif content_type == 'jpg' or content_type == 'jpeg':
             content_type = 'image/jpeg'
         elif content_type == 'pdf':
             content_type = 'application/pdf'
