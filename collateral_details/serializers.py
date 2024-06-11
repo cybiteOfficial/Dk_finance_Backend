@@ -7,7 +7,7 @@ class CollateralDetailsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
-        representation = super(CollateralDetails, self).to_representation(instance)
+        representation = super(CollateralDetailsSerializer, self).to_representation(instance)
         if instance.comment:    
             representation['comment'] = instance.comment.comment
         return representation

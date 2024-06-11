@@ -26,7 +26,7 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SignInSerializer(serializers.Serializer):
-    email = serializers.CharField()
+    username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
 
@@ -48,7 +48,8 @@ class SignUpSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "profile_picture",
-            "bank_branch"
+            "bank_branch",
+            "gender",
         ]
 
     def validate(self, data):

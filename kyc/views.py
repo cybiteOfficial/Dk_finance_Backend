@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url
 from leads.models import Leads
 from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
@@ -120,7 +120,7 @@ class DocumentsUploadVIew(APIView):
         except DocumentsUpload.DoesNotExist:
             return None
 
-    def save_document(self, file, data, doc_type, obj=False):
+    def save_document(self, file, data, doc_type, previous_data=False):
         if doc_type == "kyc":
             file_path = f"KYC_documents/{file}"
             bucket_name = Constants.BUCKET_FOR_KYC
@@ -138,8 +138,8 @@ class DocumentsUploadVIew(APIView):
         )
         if file_url:
             data["file"] = file_url
-        if obj  :
-            serializer = self.serializer_class(obj ,data=data, partial=True)
+        if previous_data:
+            serializer = self.serializer_class(previous_data, data=data, partial=True)
         else:
             serializer = self.serializer_class(data=data)
         if serializer.is_valid():
@@ -147,6 +147,20 @@ class DocumentsUploadVIew(APIView):
             return serializer.data
         else:
             return False
+        
+    def get_content_type(self, filename):
+        content_type = filename.split('.')[-1]
+        if content_type == 'png': 
+            content_type = 'image/png'
+        elif content_type == 'jpg' or content_type == 'jpeg':
+            content_type = 'image/jpeg'
+        elif content_type == 'pdf':
+            content_type = 'application/pdf'
+        elif content_type == 'txt':
+            content_type = 'text/plain'
+        elif content_type == 'docx':
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        return content_type
 
     def post(self, request):
         try:
@@ -225,6 +239,7 @@ class DocumentsUploadVIew(APIView):
         application_id = request.query_params.get('application_id')
         kyc_id = request.query_params.get('kyc_id')
         document_type = request.query_params.get('document_type')
+
         if application_id:
             data = self.queryset.filter(application__application_id = application_id,document_type = document_type)
         elif kyc_id:
@@ -233,7 +248,15 @@ class DocumentsUploadVIew(APIView):
             return Response(
                 response_data(True, "Please pass kyc or application id"), status.HTTP_400_BAD_REQUEST
             )
-        serializer = self.serializer_class(data, many=True  )
+
+        serializer = self.serializer_class(data, many=True)
+        for file in serializer.data:
+            file_url = file['file']
+            filename = file_url.split('/')[-1]
+            content_type = self.get_content_type(filename=filename)
+            presigned_url = create_presigned_url(filename=filename, doc_type=file['document_type'], content_type=content_type)
+            file['file'] = presigned_url
+
         if serializer:
             return Response(
             response_data(False, "Documents Lists", serializer.data),
@@ -246,28 +269,45 @@ class DocumentsUploadVIew(APIView):
             )
 
     def put(self, request):
-        data = request.data.copy()
-        
-        documents_data = eval(data.get('documents'))
+        data = request.data
+        document_type = request.query_params.get('document_type')
+
+        documents = data.get('documents')
+        comment = save_comment(data.get('comment'))
+
         response = []
-        for doc_data in documents_data:
-            doc_data= {k: v for k, v in doc_data.items() if k not in ['application', 'kyc']}
-            if self.queryset.filter(uuid=doc_data['uuid']).exists():
-                queryset = self.queryset.get(uuid=doc_data['uuid'])
-                if isinstance(data['file'], str):
-                    serializer = self.serializer_class(queryset)
-                    response.append(serializer.data)
+        files = []
+        for uploaded_file in data.getlist('file'):
+            files.append(uploaded_file)
+        file_num = 0
+
+        for doc in eval(documents):
+            document_uuid = doc['uuid']
+            if DocumentsUpload.objects.filter(uuid = document_uuid).exists():
+                file_updated = doc['file_updated'].strip().lower() == 'true'
+                
+                if not file_updated:
+                    doc['description'] = data.get('description')
+                    doc['comment'] = comment.pk
+                    serializer = self.serializer_class(instance=DocumentsUpload.objects.get(uuid = document_uuid), data=doc, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        response.append(serializer.data)
+
                 else:
-                    document_res = self.save_document(doc_data.get('file'), doc_data, doc_data.get('document_type'), queryset)
-                    if document_res:
-                        response.append(document_res)
-                    else:
-                        return Response(
-                            response_data(True, "Something went wrong.", serializer.errors),
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-        return Response(
-            response_data(False, "Successfully updated.", response),
-            status.HTTP_200_OK,
-        )
+                    doc['description'] = data.get('description')
+                    doc['comment'] = comment.pk
+                    document_res = self.save_document(files[file_num], doc, document_type, previous_data=DocumentsUpload.objects.get(uuid = document_uuid))
+                    response.append(document_res)
+                    file_num += 1   
+
+            else:
+                return Response(
+                    response_data(True, "Document not found"),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )    
         
+        return Response(
+            response_data(False, "Document uploaded successfully", response),
+            status=status.HTTP_200_OK,
+        )
