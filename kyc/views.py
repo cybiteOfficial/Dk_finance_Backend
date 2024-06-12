@@ -311,3 +311,20 @@ class DocumentsUploadVIew(APIView):
             response_data(False, "Document uploaded successfully", response),
             status=status.HTTP_200_OK,
         )
+    
+    def delete(self, request):
+        
+        document_uuid = request.data.get('document_uuid')
+        
+        if DocumentsUpload.objects.filter(uuid = document_uuid).exists():
+            document = DocumentsUpload.objects.get(uuid = document_uuid)
+            document.delete()
+            return Response(
+                response_data(False, "Document deleted successfully"),
+                status=status.HTTP_200_OK,
+            )
+        
+        return Response(
+            response_data(True, "Document not found"),
+            status=status.HTTP_404_NOT_FOUND,
+        )
