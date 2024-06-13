@@ -58,6 +58,20 @@ def upload_file_to_s3_bucket(s3_conn, file, bucket_name, file_key):
         return str(file_url)
     except Exception as e:
         return False
+    
+def get_content_type(filename):
+        content_type = filename.split('.')[-1]
+        if content_type == 'png': 
+            content_type = 'image/png'
+        elif content_type == 'jpg' or content_type == 'jpeg':
+            content_type = 'image/jpeg'
+        elif content_type == 'pdf':
+            content_type = 'application/pdf'
+        elif content_type == 'txt':
+            content_type = 'text/plain'
+        elif content_type == 'docx':
+            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        return content_type
 
 def create_presigned_url(filename, doc_type, content_type, expiration=3600):
     s3_client = make_s3_connection()
@@ -71,6 +85,9 @@ def create_presigned_url(filename, doc_type, content_type, expiration=3600):
     elif doc_type == "photos":
         bucket_name = Constants.BUCKET_FOR_PHOTOGRAPHS_DOCUMENTS
         object_name = f"photographs/{filename}"
+    elif doc_type == 'profile-photo':
+        bucket_name = Constants.BUCKET_FOR_PROFILE_PHOTOS
+        object_name = f"Profile_photos/{filename}"
 
     try:
         response = s3_client.generate_presigned_url('get_object',

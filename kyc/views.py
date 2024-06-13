@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url, get_content_type
 from leads.models import Leads
 from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
@@ -148,19 +148,6 @@ class DocumentsUploadVIew(APIView):
         else:
             return False
         
-    def get_content_type(self, filename):
-        content_type = filename.split('.')[-1]
-        if content_type == 'png': 
-            content_type = 'image/png'
-        elif content_type == 'jpg' or content_type == 'jpeg':
-            content_type = 'image/jpeg'
-        elif content_type == 'pdf':
-            content_type = 'application/pdf'
-        elif content_type == 'txt':
-            content_type = 'text/plain'
-        elif content_type == 'docx':
-            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        return content_type
 
     def post(self, request):
         try:
@@ -253,7 +240,7 @@ class DocumentsUploadVIew(APIView):
         for file in serializer.data:
             file_url = file['file']
             filename = file_url.split('/')[-1]
-            content_type = self.get_content_type(filename=filename)
+            content_type = get_content_type(filename=filename)
             presigned_url = create_presigned_url(filename=filename, doc_type=file['document_type'], content_type=content_type)
             file['file'] = presigned_url
 

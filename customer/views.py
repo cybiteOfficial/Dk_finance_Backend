@@ -7,7 +7,7 @@ from .serializers import CustomerDetailsSerializer, CustomCustomerSerializer, Ad
 
 from applicants.models import Applicants
 from constant import Constants
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url, get_content_type
 from rest_framework import status
 from pagination import CommonPagination
 from django.conf import settings
@@ -91,6 +91,16 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                         paginator = self.pagination_class()
                         paginated_res = paginator.paginate_queryset(customer_objs, request)
                         serializer = self.serializer_class(paginated_res, many=True)
+                        for applicant in serializer.data:
+                            file_url = applicant.get('profile_photo')
+                            filename = file_url.split('/')[-1]
+                            content_type = get_content_type(filename=filename)
+                            presigned_url = create_presigned_url(
+                                                                    filename=filename,
+                                                                    doc_type='profile-photo',
+                                                                    content_type=content_type
+                                                                )
+                            applicant.update({'profile_photo': presigned_url})
                         return paginator.get_paginated_response(serializer.data)
                 else:
                     return Response(

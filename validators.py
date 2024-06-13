@@ -6,6 +6,7 @@ from email_validator import validate_email
 def validate_otp_length(value):
     if not (100000 <= value <= 999999):
         raise ValidationError("OTP must be exactly 6 digits.")
+    return True
 
 
 def validate_phone_number(value):
