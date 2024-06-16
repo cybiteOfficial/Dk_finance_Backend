@@ -18,5 +18,8 @@ class ApplicantsSerializer(serializers.ModelSerializer):
         representation['paymentedetails'] = instance.paymentedetails.payment_id
         if instance.comment:
             representation['comment'] = instance.comment.comment
+        representation['created_by'] = {
+            'id': instance.created_by.uuid,
+            'name': instance.created_by.username
+        }
         return representation
-    
