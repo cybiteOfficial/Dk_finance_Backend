@@ -19,7 +19,7 @@ class ApplicantsSerializer(serializers.ModelSerializer):
         if instance.comment:
             representation['comment'] = instance.comment.comment
         representation['created_by'] = {
-            'id': instance.created_by.uuid,
-            'name': instance.created_by.username
+            'ro_name': instance.created_by.first_name,
+            'employee_id': instance.created_by.username,
         }
         return representation
