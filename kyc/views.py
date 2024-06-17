@@ -121,6 +121,9 @@ class DocumentsUploadVIew(APIView):
             return None
 
     def save_document(self, file, data, doc_type, previous_data=False):
+        file_path = ""
+        bucket_name = ""
+
         if doc_type == "kyc":
             file_path = f"KYC_documents/{file}"
             bucket_name = Constants.BUCKET_FOR_KYC
@@ -130,8 +133,7 @@ class DocumentsUploadVIew(APIView):
         elif doc_type == "photos":
             file_path = f"photographs/{file}"
             bucket_name = Constants.BUCKET_FOR_PHOTOGRAPHS_DOCUMENTS
-        else:
-            ...
+
         s3_conn = make_s3_connection()
         file_url = upload_file_to_s3_bucket(
             s3_conn, file, bucket_name, file_path
