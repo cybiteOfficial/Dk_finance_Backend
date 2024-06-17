@@ -275,7 +275,8 @@ class DocumentsUploadVIew(APIView):
                 
                 if not file_updated:
                     doc['description'] = data.get('description')
-                    doc['comment'] = comment.pk
+                    if comment:
+                        doc['comment'] = comment.pk
                     serializer = self.serializer_class(instance=DocumentsUpload.objects.get(uuid = document_uuid), data=doc, partial=True)
                     if serializer.is_valid():
                         serializer.save()
@@ -283,7 +284,8 @@ class DocumentsUploadVIew(APIView):
 
                 else:
                     doc['description'] = data.get('description')
-                    doc['comment'] = comment.pk
+                    if comment:
+                        doc['comment'] = comment.pk
                     document_res = self.save_document(files[file_num], doc, document_type, previous_data=DocumentsUpload.objects.get(uuid = document_uuid))
                     response.append(document_res)
                     file_num += 1   
