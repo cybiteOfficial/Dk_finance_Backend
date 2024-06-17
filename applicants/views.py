@@ -19,7 +19,7 @@ from kyc.models import KYCDetails, DocumentsUpload
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Applicants.objects.all().order_by('-updated_at')
+    queryset = Applicants.objects.filter(is_active=True).order_by('-updated_at')
     pagination_class = CommonPagination
 
     def get(self, request):

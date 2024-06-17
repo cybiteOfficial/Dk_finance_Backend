@@ -105,21 +105,57 @@ def create_presigned_url(filename, doc_type, content_type, expiration=3600):
 
 
 def generate_leadID(length=6):
-    """Generate a random Lead_id of specified length."""
+    """Generate a Lead_id of specified format: LEAD0001, LEAD0002, and so on."""
 
-    lead_id = "ld_" + "".join(random.choices(string.digits, k=length))
+    from leads.models import Leads 
+
+    if Leads.objects.exists():
+        last_lead = Leads.objects.order_by('-lead_id').first()
+        if last_lead.lead_id[0:4] == "LEAD":
+            last_sequence = int(last_lead.lead_id[4:])
+        else:
+            last_sequence = 0
+    else:
+        last_sequence = 0
+
+    lead_id = "LEAD" + (last_sequence + 1).__str__().zfill(4)
+
     return lead_id
 
-def generate_applicationID(length=8):
-    """Generate a random applicante_id of specified length."""
+def generate_applicationID():
+    """Generate a applicante_id of specified format: APP0001, APP0002, and so on."""
+    
+    from applicants.models import Applicants
 
-    applicante_id = "app_" + "".join(random.choices(string.digits, k=length))
-    return applicante_id
+    if Applicants.objects.exists():
+        last_applicant = Applicants.objects.order_by('-application_id').first()
+        if last_applicant.application_id[0:3] == "APP":
+            last_sequence = int(last_applicant.application_id[3:])
+        else:
+            last_sequence = 0
+    else:
+        last_sequence = 0
+
+    applicant_id = "APP" + (last_sequence + 1).__str__().zfill(4)
+
+    return applicant_id
 
 def generate_customerID(length=8):
-    """Generate a random customer_id of specified length."""
+    """Generate a applicante_id of specified format: CUST0001, CUST0002, and so on."""
+    
+    from customer.models import CustomerDetails 
 
-    customer_id = "cif_" + "".join(random.choices(string.digits, k=length))
+    if CustomerDetails.objects.exists():
+        last_customer = CustomerDetails.objects.order_by('-cif_id').first()
+        if last_customer.cif_id[0:4] == "CUST":
+            last_sequence = int(last_customer.cif_id[4:])
+        else:
+            last_sequence = 0
+    else:
+        last_sequence = 0
+
+    customer_id = "CUST" + (last_sequence + 1).__str__().zfill(4)
+
     return customer_id
 
 

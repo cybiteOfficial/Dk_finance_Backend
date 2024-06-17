@@ -18,6 +18,7 @@ class Applicants(BaseModel):
     description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
     created_by = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.application_id
