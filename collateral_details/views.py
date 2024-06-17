@@ -87,7 +87,14 @@ class CollateralDetailsAPIView(APIView):
                     file_url = obj['documentUpload']
                     filename = file_url.split('/')[-1]
                     content_type = get_content_type(filename=filename)
-                    presigned_url = create_presigned_url(filename=filename, doc_type="kyc", content_type=content_type)
+                    s3_client = make_s3_connection()
+                    presigned_url = s3_client.generate_presigned_url('get_object',
+                                                    Params={'Bucket': Constants.BUCKET_FOR_KYC,
+                                                            'Key': f"collatral_doc/{filename}",
+                                                            'ResponseContentDisposition': 'inline',
+                                                            'ResponseContentType': content_type,
+                                                    },
+                                                    ExpiresIn=3600)
                     obj['documentUpload'] = presigned_url
                 return Response(
                     response_data(False, "collateral details found", serializer.data),
