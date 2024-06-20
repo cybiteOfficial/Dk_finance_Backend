@@ -30,6 +30,14 @@ class PrintDocumentView(APIView):
     def get_collateral_details(self, application_id):
         collateral_queryset = CollateralDetails.objects.filter(applicant_id = application_id)
         serializer = CollateralDetailsSerializer(collateral_queryset, many=True)
+        for obj in serializer.data:
+                if obj['documentUpload']:
+                    fileurl = obj['documentUpload']
+                    filename = fileurl.split('/')[-1]
+                    content_type = get_content_type(filename)
+                    obj['documentUpload'] = create_presigned_url(filename=filename, doc_type='kyc',\
+                                                        content_type=content_type, expiration=3600
+                                                    )
         return serializer.data
     
     def get_document_details(self, document_type, application_id):
