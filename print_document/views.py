@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 
-from utils import response_data
+from utils import response_data, get_content_type, create_presigned_url
 
 from applicants.models import Applicants
 from collateral_details.models import CollateralDetails
@@ -36,6 +36,15 @@ class PrintDocumentView(APIView):
         if application_id:
             document_queryset = DocumentsUpload.objects.filter(application_id = application_id, document_type = document_type)
             serializer = DocumentUploadSerializer(document_queryset, many=True)
+            for obj in serializer.data:
+                if obj['file']:
+                    fileurl = obj['file']
+                    filename = fileurl.split('/')[-1]
+                    content_type = get_content_type(filename)
+                    obj['file'] = create_presigned_url(filename=filename, doc_type=obj['document_type'],\
+                                                        content_type=content_type, expiration=3600
+                                                    )
+
         return serializer.data
 
 
