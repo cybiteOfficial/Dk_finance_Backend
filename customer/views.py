@@ -93,14 +93,15 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                         serializer = self.serializer_class(paginated_res, many=True)
                         for applicant in serializer.data:
                             file_url = applicant.get('profile_photo')
-                            filename = file_url.split('/')[-1]
-                            content_type = get_content_type(filename=filename)
-                            presigned_url = create_presigned_url(
-                                                                    filename=filename,
-                                                                    doc_type='profile-photo',
-                                                                    content_type=content_type
-                                                                )
-                            applicant.update({'profile_photo': presigned_url})
+                            if file_url:
+                                filename = file_url.split('/')[-1]
+                                content_type = get_content_type(filename=filename)
+                                presigned_url = create_presigned_url(
+                                                                        filename=filename,
+                                                                        doc_type='profile-photo',
+                                                                        content_type=content_type
+                                                                    )
+                                applicant.update({'profile_photo': presigned_url})
                         return paginator.get_paginated_response(serializer.data)
                 else:
                     return Response(
@@ -115,7 +116,6 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
 
         data = request.data
         customer_data = json.loads(data.get('customer_data'))
-        print(customer_data)
         if Applicants.objects.filter(application_id = customer_data['application_id']).exists():
             applicant = Applicants.objects.get(application_id = customer_data['application_id'])
             customer_data['applicant'] = applicant.pk
