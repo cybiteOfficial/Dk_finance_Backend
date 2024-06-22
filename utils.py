@@ -110,8 +110,9 @@ def generate_leadID(length=6):
     from leads.models import Leads 
 
     if Leads.objects.exists():
-        last_lead = Leads.objects.order_by('-lead_id').first()
-        if last_lead.lead_id[0:4] == "LEAD":
+        lead_with_new_format = Leads.objects.filter(lead_id__regex=r'^LEAD\d{4}$')
+        if lead_with_new_format:
+            last_lead = Leads.objects.order_by('-lead_id').first()
             last_sequence = int(last_lead.lead_id[4:])
         else:
             last_sequence = 0
@@ -128,9 +129,10 @@ def generate_applicationID():
     from applicants.models import Applicants
 
     if Applicants.objects.exists():
-        last_applicant = Applicants.objects.order_by('-application_id').first()
-        if last_applicant.application_id[0:3] == "APP":
-            last_sequence = int(last_applicant.application_id[3:])
+        applicants_with_new_format = Applicants.objects.filter(application_id__regex=r'^APP\d{4}$')
+        if applicants_with_new_format:
+            last_applicant = applicants_with_new_format.order_by('-application_id').first()
+            last_sequence = int(last_applicant.application_id[3:])            
         else:
             last_sequence = 0
     else:
@@ -146,8 +148,9 @@ def generate_customerID(length=8):
     from customer.models import CustomerDetails 
 
     if CustomerDetails.objects.exists():
-        last_customer = CustomerDetails.objects.order_by('-cif_id').first()
-        if last_customer.cif_id[0:4] == "CUST":
+        customers_with_new_format = CustomerDetails.objects.filter(cif_id__regex=r'^CUST\d{4}$')
+        if customers_with_new_format:
+            last_customer = CustomerDetails.objects.order_by('-cif_id').first()
             last_sequence = int(last_customer.cif_id[4:])
         else:
             last_sequence = 0
