@@ -6,7 +6,7 @@ from choices import Choices
 from user_auth.models import Comments
 
 class CustomerDetails(BaseModel):
-    role = models.CharField(max_length=255, null=True, blank=True, default="applicant")
+    role = models.CharField(max_length=255, choices=Choices.CUSTOMER_ROLE_CHOICES)
     cif_id = models.CharField(max_length=255, default=generate_customerID, unique=True)
     applicant = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING, related_name='applicant')
 

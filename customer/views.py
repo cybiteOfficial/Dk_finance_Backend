@@ -115,6 +115,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
 
         data = request.data
         customer_data = json.loads(data.get('customer_data'))
+        print(customer_data)
         if Applicants.objects.filter(application_id = customer_data['application_id']).exists():
             applicant = Applicants.objects.get(application_id = customer_data['application_id'])
             customer_data['applicant'] = applicant.pk

@@ -29,6 +29,11 @@ class Choices:
     CASE_TAG_CHOICES = [
         ('normal', 'Normal'),
     ]
+    
+    CUSTOMER_ROLE_CHOICES = [
+        ('Applicant', 'APPLICANT'),
+        ('Co-Applicant', 'CO-APPLICANT')
+    ]
 
     CUSTOMER_TYPE_CHOICES = [
         ('home_loan', 'HomeLoan'),
