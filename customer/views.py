@@ -7,9 +7,10 @@ from .serializers import CustomerDetailsSerializer, CustomCustomerSerializer, Ad
 
 from applicants.models import Applicants
 from constant import Constants
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url, get_content_type
 from rest_framework import status
 from pagination import CommonPagination
+from django.conf import settings
 
 class CustomerDetailsAPIView(generics.ListCreateAPIView):
     queryset = CustomerDetails.objects.all()
@@ -90,6 +91,16 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                         paginator = self.pagination_class()
                         paginated_res = paginator.paginate_queryset(customer_objs, request)
                         serializer = self.serializer_class(paginated_res, many=True)
+                        for applicant in serializer.data:
+                            file_url = applicant.get('profile_photo')
+                            filename = file_url.split('/')[-1]
+                            content_type = get_content_type(filename=filename)
+                            presigned_url = create_presigned_url(
+                                                                    filename=filename,
+                                                                    doc_type='profile-photo',
+                                                                    content_type=content_type
+                                                                )
+                            applicant.update({'profile_photo': presigned_url})
                         return paginator.get_paginated_response(serializer.data)
                 else:
                     return Response(
@@ -102,7 +113,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
 
     def post(self, request):
 
-        data = request.data.copy()
+        data = request.data
         customer_data = json.loads(data.get('customer_data'))
         if Applicants.objects.filter(application_id = customer_data['application_id']).exists():
             applicant = Applicants.objects.get(application_id = customer_data['application_id'])
@@ -112,8 +123,14 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
         try:
+            MAX_FILE_SIZE = settings.DATA_UPLOAD_MAX_MEMORY_SIZE
             if request.FILES.get('profile_photo'):
                 file_obj = request.FILES.get('profile_photo')
+                if file_obj.size > MAX_FILE_SIZE:
+                    return Response(
+                        response_data(True, "File size too big"), status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                    )
+
                 bucket_name = Constants.BUCKET_FOR_PROFILE_PHOTOS
                 file_path = f"Profile_photos/{file_obj}"
                 s3_conn = make_s3_connection()

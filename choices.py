@@ -87,5 +87,5 @@ class Choices:
     "do_phase":"technicalofficer",
     "technicalofficer":"bm_phase",
     "bm_phase":"cluster",
-    "cluster":"md_phase",
+    "cluster":"sanctioned",
     }

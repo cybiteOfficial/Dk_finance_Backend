@@ -13,7 +13,7 @@ class CustomerDetails(BaseModel):
     # common for android and admin
     title = models.CharField(max_length=50, null=True, blank=True)
     firstName = models.CharField(max_length=255)
-    lastName = models.CharField(max_length=255)
+    lastName = models.CharField(max_length=255, null=True, blank=True)
     middle_name = models.CharField(max_length=30, null=True, blank=True)
     dateOfBirth = models.CharField()
     age = models.CharField(max_length=255)

@@ -6,7 +6,7 @@ from .models import CollateralDetails
 from .serializers import CollateralDetailsSerializer
 from applicants.models import Applicants
 from constant import Constants
-from utils import response_data, save_comment, make_s3_connection, upload_file_to_s3_bucket
+from utils import response_data, save_comment, make_s3_connection, upload_file_to_s3_bucket, get_content_type, create_presigned_url
 
 class CollateralDetailsAPIView(APIView):
     serializer_class = CollateralDetailsSerializer
@@ -83,6 +83,19 @@ class CollateralDetailsAPIView(APIView):
             if Applicants.objects.filter(application_id = application_id).exists():
                 collateral_obj = self.queryset.filter(applicant__application_id=application_id)
                 serializer = self.serializer_class(collateral_obj, many=True)
+                for obj in serializer.data:
+                    file_url = obj['documentUpload']
+                    filename = file_url.split('/')[-1]
+                    content_type = get_content_type(filename=filename)
+                    s3_client = make_s3_connection()
+                    presigned_url = s3_client.generate_presigned_url('get_object',
+                                                    Params={'Bucket': Constants.BUCKET_FOR_KYC,
+                                                            'Key': f"collatral_doc/{filename}",
+                                                            'ResponseContentDisposition': 'inline',
+                                                            'ResponseContentType': content_type,
+                                                    },
+                                                    ExpiresIn=3600)
+                    obj['documentUpload'] = presigned_url
                 return Response(
                     response_data(False, "collateral details found", serializer.data),
                     status=status.HTTP_200_OK,
