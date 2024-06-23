@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate
 
 from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
-from utils import response_data, OauthGetToken, save_comment
+from utils import response_data, OauthGetToken, save_comment, generate_empID
 
 class SignUpView(APIView):
     permission_classes = (AllowAny,)
@@ -23,10 +23,9 @@ class SignUpView(APIView):
                     if field == "gender"
                     else data[field].capitalize()
                 )
-
         serializer = self.serializer_class(data=data)
 
-        if serializer.is_valid():
+        if serializer.is_valid():   
             serializer.save()
             return Response(
                 response_data(False, "User Created.", serializer.data),

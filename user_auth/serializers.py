@@ -2,6 +2,8 @@ from rest_framework import serializers
 from user_auth.models import User, Comments
 from django.contrib.auth.models import Group, Permission
 
+from utils import generate_empID
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,6 +45,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             "confirm_password",
             "email",
             "user_type",
+            "emp_id",
             "date_of_birth",
             "phone_number",
             "first_name",
@@ -59,6 +62,7 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("confirm_password")
+        validated_data['emp_id'] = generate_empID()
         user = User.objects.create_user(**validated_data)
         return user
 

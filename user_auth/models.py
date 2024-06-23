@@ -7,6 +7,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 from validators import validate_otp_length
 from choices import Choices
 
+from utils import generate_empID
+
 class BaseModel(models.Model):
     class Meta:
         abstract = True
@@ -70,6 +72,7 @@ class CustomUserManager(BaseUserManager):
 class User(BaseModel, AbstractUser, PersonDetails):
     
     username =  models.CharField(max_length=250, unique=True)
+    emp_id = models.CharField(default=generate_empID, null=True)
     email = models.EmailField(max_length=100, unique=True)
     user_type = models.CharField(max_length=250, choices=Choices.USER_TYPE_CHOICES)
     profile_picture = models.ImageField(

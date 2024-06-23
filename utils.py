@@ -11,8 +11,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 
 import json
-from user_auth.serializers import CommentSerializer
-from user_auth.models import Comments
 
 load_dotenv()
 
@@ -104,7 +102,26 @@ def create_presigned_url(filename, doc_type, content_type, expiration=3600):
     return response
 
 
-def generate_leadID(length=6):
+def generate_empID():
+    
+    from user_auth.models import User
+    
+    if User.objects.exists():
+        users_with_new_format = User.objects.filter(emp_id__regex=r'^EMP\d{4}$')
+        if users_with_new_format:
+            last_user = users_with_new_format.order_by('-emp_id').first()
+            last_sequence = int(last_user.emp_id[3:])
+        else:
+            last_sequence = 0
+    else:
+        last_sequence = 0
+
+    emp_id = "EMP" + (last_sequence + 1).__str__().zfill(4)
+
+    return emp_id
+
+
+def generate_leadID():
     """Generate a Lead_id of specified format: LEAD0001, LEAD0002, and so on."""
 
     from leads.models import Leads 
@@ -112,7 +129,7 @@ def generate_leadID(length=6):
     if Leads.objects.exists():
         lead_with_new_format = Leads.objects.filter(lead_id__regex=r'^LEAD\d{4}$')
         if lead_with_new_format:
-            last_lead = Leads.objects.order_by('-lead_id').first()
+            last_lead = lead_with_new_format.order_by('-lead_id').first()
             last_sequence = int(last_lead.lead_id[4:])
         else:
             last_sequence = 0
@@ -142,7 +159,7 @@ def generate_applicationID():
 
     return applicant_id
 
-def generate_customerID(length=8):
+def generate_customerID():
     """Generate a applicante_id of specified format: CUST0001, CUST0002, and so on."""
     
     from customer.models import CustomerDetails 
@@ -150,7 +167,7 @@ def generate_customerID(length=8):
     if CustomerDetails.objects.exists():
         customers_with_new_format = CustomerDetails.objects.filter(cif_id__regex=r'^CUST\d{4}$')
         if customers_with_new_format:
-            last_customer = CustomerDetails.objects.order_by('-cif_id').first()
+            last_customer = customers_with_new_format.order_by('-cif_id').first()
             last_sequence = int(last_customer.cif_id[4:])
         else:
             last_sequence = 0
@@ -211,6 +228,10 @@ def generate_agent_code(prefix='dke_', length=4):
     return prefix + random_numbers
 
 def save_comment(comment_text):
+    
+    from user_auth.serializers import CommentSerializer
+    from user_auth.models import Comments 
+    
     if comment_text:
         serializer = CommentSerializer(data={"comment":comment_text})
         if serializer.is_valid():

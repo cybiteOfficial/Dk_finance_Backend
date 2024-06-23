@@ -60,7 +60,7 @@ class LeadView(APIView):
 
     def get(self, request):
         try:
-            leads = self.queryset.filter(assigned_to__email = request.user.email)
+            leads = self.queryset.filter(assigned_to__email = request.user.email).order_by('-lead_id')
             if leads:
                 serializer = self.serializer_class(leads, many=True)
                 return Response(
