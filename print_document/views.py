@@ -10,6 +10,8 @@ from collateral_details.models import CollateralDetails
 from collateral_details.serializers import CollateralDetailsSerializer
 from customer_application.models import CustomerApplicationForm
 from customer_application.serializers import CafSerializer
+from customer.models import CustomerDetails, CustomerAddress
+from customer.serializers import CustomerDetailsSerializer, AddressSerializer
 from kyc.models import DocumentsUpload
 from kyc.serializers import DocumentUploadSerializer
 from loan.models import Loan
@@ -54,6 +56,21 @@ class PrintDocumentView(APIView):
                                                     )
 
         return serializer.data
+    
+    def get_customer_details(self, application_id):
+        data = []
+        
+        if application_id:
+            customer_queryset = CustomerDetails.objects.filter(applicant_id = application_id)
+            
+            for customer in customer_queryset:
+                address = CustomerAddress.objects.get(customer_id = customer.uuid)
+                data.append({
+                    'details': CustomerDetailsSerializer(customer).data,
+                    'address': AddressSerializer(address).data,
+                })
+                
+        return data
 
 
     def get(self, request):
@@ -63,6 +80,8 @@ class PrintDocumentView(APIView):
         if Applicants.objects.filter(application_id = application_id).exists():
             
             application_id = Applicants.objects.get(application_id = application_id).pk 
+            
+            customer_details = self.get_customer_details(application_id=application_id)
 
             # Loan details
             loan_details = self.get_loan_details(application_id=application_id)
@@ -84,6 +103,7 @@ class PrintDocumentView(APIView):
             )
 
         data = {
+            "customer_details": customer_details,
             "loan_details": loan_details,
             "caf_details": caf_details,
             "collateral_details": collateral_details,
