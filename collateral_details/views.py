@@ -126,10 +126,11 @@ class CollateralDetailsAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def put(self, request, collateral_id):
-        collateral_detail = self.get_collateral_detail(collateral_id)
-        if collateral_detail:
-            serializer = self.serializer_class(collateral_detail, data=request.data)
+    def put(self, request):
+        collateral_id = request.query_params.get('collateral_id')
+        collateral = CollateralDetails.objects.get(collateral_id=collateral_id)
+        if collateral:
+            serializer = self.serializer_class(collateral, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(
