@@ -11,7 +11,7 @@ from user_auth.models import Comments
 
 class Applicants(BaseModel):
     
-    application_id = models.CharField(max_length=255, default=generate_applicationID)
+    application_id = models.CharField(max_length=255, default=generate_applicationID, unique=True)
     lead = models.OneToOneField(Leads, on_delete=models.CASCADE, related_name='leads', null=True, blank=True)
     paymentedetails = models.OneToOneField(Payment, on_delete=models.CASCADE, related_name='paymentdetail')
     status = models.CharField(max_length=200, choices= Choices.APPLICATION_STATUS_CHOICES, default='ro_phase')
