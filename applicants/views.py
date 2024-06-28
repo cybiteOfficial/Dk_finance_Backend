@@ -157,7 +157,7 @@ class UpdateApplicationStatus(APIView):
                     for applicant in applicant_to_update:
                         audit_trail = AuditTrail.objects.create(application_id=applicant, current_status=key, updated_status=new_status, updated_by=request.user)
                         created_at = audit_trail.created_at
-                        Applicants.objects.filter(application_id = applicant).update(updated_at = created_at)
+                        Applicants.objects.filter(application_id = applicant).update(updated_at = created_at, status = new_status)
                         
                 return Response(response_data(False, "Status updated successfully"), status=status.HTTP_200_OK)
         except:
