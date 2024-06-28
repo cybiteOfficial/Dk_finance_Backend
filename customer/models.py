@@ -35,12 +35,12 @@ class CustomerDetails(BaseModel):
     agriculturalLand = models.CharField(max_length=255, null=True, blank=True)
     valueOfAgriculturalLand = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     earningsFromAgriculturalLand = models.DecimalField(max_digits=20, decimal_places=2, null=True,blank=True )
-    educationQualification = models.CharField(255, null=True, blank=True)
+    educationQualification = models.CharField(max_length=255, null=True, blank=True)
     numberOfDependents = models.CharField(max_length=255,null=True, blank=True)
 
     current_address = models.CharField(max_length=255, null=True, blank=True)
     permanent_address = models.CharField(max_length=255,null=True, blank=True)
-    profile_photo = models.CharField(max_length=255, null=True, blank=True)
+    profile_photo = models.CharField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True, blank=True)
 

@@ -20,7 +20,22 @@ class CustomCustomerSerializer(serializers.ModelSerializer):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerAddress
-        fields = '__all__'
+        fields = [
+            'uuid',
+            'address_line_1',
+            'address_line_2',
+            'address_line_3',
+            'state',
+            'city',
+            'district',
+            'tehsil_or_taluka',
+            'pincode',
+            'landmark',
+            'residence_state',
+            'residence_type',
+            'stability_at_residence',
+            'distance_from_branch'
+        ]
         
     def to_representation(self, instance):
         representation = super(AddressSerializer, self).to_representation(instance)

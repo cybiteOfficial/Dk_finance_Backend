@@ -64,10 +64,12 @@ class PrintDocumentView(APIView):
             customer_queryset = CustomerDetails.objects.filter(applicant_id = application_id)
             
             for customer in customer_queryset:
-                address = CustomerAddress.objects.get(customer_id = customer.uuid)
+                current_address = CustomerAddress.objects.get(customer_id = customer.uuid, is_current = True, is_permanent = False) if CustomerAddress.objects.filter(customer_id = customer.uuid, is_current = True, is_permanent = False).exists() else None
+                permanent_address = CustomerAddress.objects.get(customer_id = customer.uuid, is_current = False, is_permanent = True) if CustomerAddress.objects.filter(customer_id = customer.uuid, is_current = False, is_permanent = True).exists() else None
                 data.append({
                     'details': CustomerDetailsSerializer(customer).data,
-                    'address': AddressSerializer(address).data,
+                    'current_address': AddressSerializer(current_address).data,
+                    'permanent_address': AddressSerializer(permanent_address).data,
                 })
                 
         return data
