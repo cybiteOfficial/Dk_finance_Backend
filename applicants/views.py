@@ -119,16 +119,30 @@ class CreateAppForPaymentReference(APIView):
         username = request.user.username
         order_id = generate_OrderID()
         application_id = generate_applicationID()
-        kyc_id = request.data.get('kyc_id')
+        # kyc_id = request.data.get('kyc_id')
+        lead_id = request.query_params.get('lead_id')
 
         created_by = User.objects.get(username = username)
         
         if order_id:
             Payment.objects.create(order_id=order_id)
             paymt_obj = Payment.objects.get(order_id=order_id)
-        Applicants.objects.create(application_id=application_id, paymentedetails=paymt_obj, created_by=created_by)
+        if lead_id:
+            lead_obj = Leads.objects.get(lead_id=lead_id)
+            if lead_obj == None:
+                return Response(
+                    response_data(True, "Lead id not found"),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            return Response(
+                response_data(True, "Lead id is required"),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Applicants.objects.create(application_id=application_id, paymentedetails=paymt_obj, lead = lead_obj, created_by=created_by)
         applicant = Applicants.objects.get(paymentedetails=paymt_obj)
-        DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
+        # DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
         serializer = self.serializer_class(applicant)
         return Response(
             response_data(False, "Applicant created successfully", serializer.data),
