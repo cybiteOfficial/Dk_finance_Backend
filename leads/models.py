@@ -1,5 +1,5 @@
 from django.db import models
-from utils import generate_leadID
+from utils import generate_leadID, generate_agent_code
 from choices import Choices
 from phonenumber_field.modelfields import PhoneNumberField
 from user_auth.models import BaseModel, User, Comments
@@ -9,10 +9,10 @@ class Leads(BaseModel):
     lead_id = models.CharField(max_length=255, default=generate_leadID, unique=True)
     assigned_to = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='leads', null=True)
     first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100, null=True, blank=True)
     email = models.EmailField(max_length=100, null=True)
     mobile_number = PhoneNumberField()
-    agent_code = models.CharField(max_length=255, null=True)
+    agent_code = models.CharField(max_length=255, null=True, default=generate_agent_code)
     branch_code = models.CharField(max_length=255, null=True)
     branch_name = models.CharField(max_length=255, null=True)
     loan_amount = models.CharField(max_length=255, null=True)

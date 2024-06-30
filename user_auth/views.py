@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate
 
 from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
-from utils import response_data, OauthGetToken
+from utils import response_data, OauthGetToken, save_comment, generate_empID
 
 class SignUpView(APIView):
     permission_classes = (AllowAny,)
@@ -14,17 +14,18 @@ class SignUpView(APIView):
     user = get_user_model()
 
     def post(self, request):
+        data = request.data.copy()
+
         for field in ["gender", "first_name", "last_name"]:
-            if request.data.get(field):
-                request.data[field] = (
-                    request.data[field].lower()
+            if data.get(field):
+                data[field] = (
+                    data[field].lower()
                     if field == "gender"
-                    else request.data[field].capitalize()
+                    else data[field].capitalize()
                 )
+        serializer = self.serializer_class(data=data)
 
-        serializer = self.serializer_class(data=request.data)
-
-        if serializer.is_valid():
+        if serializer.is_valid():   
             serializer.save()
             return Response(
                 response_data(False, "User Created.", serializer.data),
@@ -48,11 +49,11 @@ class SignInView(APIView):
         if serializer.is_valid():
             user = authenticate(
                 request,
-                email=serializer.validated_data["email"],
+                username=serializer.validated_data["username"],
                 password=serializer.validated_data["password"],
             )
             if user:
-                response, status_code = OauthGetToken(data.get('email'), data.get('password'))
+                response, status_code = OauthGetToken(data.get('username'), data.get('password'))
                 if status_code ==  200:
                     return Response(
                         response_data(False, "Successfully login.", response.json()),

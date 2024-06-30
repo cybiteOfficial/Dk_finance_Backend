@@ -8,11 +8,11 @@ from utils import generate_PaymentID
 class Payment(BaseModel):
 
     payment_id = models.CharField(max_length=255, unique=True, default=generate_PaymentID)
-    lead_id = models.OneToOneField(Leads, on_delete=models.DO_NOTHING, related_name='lead')
+    lead_id = models.OneToOneField(Leads, on_delete=models.DO_NOTHING, related_name='lead', null=True)
     order_id = models.CharField(max_length=255, unique=True)  # Unique identifier for your order
-    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount in decimal format
-    currency = models.CharField(max_length=3)  # Optional: Currency code (e.g., INR)
-    status = models.CharField(max_length=255, choices=Choices.PAYMENT_STATUS, blank=False, null=False)  # Track payment status (e.g., initiated, pending, successful, failed)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=5000.00)  # Amount in decimal format
+    currency = models.CharField(max_length=3, default='INR')  # Optional: Currency code (e.g., INR)
+    status = models.CharField(max_length=255, choices=Choices.PAYMENT_STATUS, default='Done')  # Track payment status (e.g., initiated, pending, successful, failed)
     description = models.TextField(null=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
 

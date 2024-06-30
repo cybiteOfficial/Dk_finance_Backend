@@ -29,6 +29,11 @@ class Choices:
     CASE_TAG_CHOICES = [
         ('normal', 'Normal'),
     ]
+    
+    CUSTOMER_ROLE_CHOICES = [
+        ('applicant', 'APPLICANT'),
+        ('co_applicant', 'CO-APPLICANT')
+    ]
 
     CUSTOMER_TYPE_CHOICES = [
         ('home_loan', 'HomeLoan'),
@@ -46,7 +51,8 @@ class Choices:
 
     DOCUMENT_TYPE_CHOICES = [
         ('kyc', 'KYC'),
-        ('other', 'Other')
+        ('other', 'Other'),
+        ('photos', 'Photos')
     ]
 
     VERIFICATION_TYPE_CHOICES = [
@@ -55,27 +61,36 @@ class Choices:
     ]
 
     TRANSACTION_TYPE = [
-        ('yes', 'Yes'),
-        ('no', 'No')
+       ('purchase', 'Purchase'),
+        ('refinance', 'Refinance'),
+        ('construction', 'Construction'),
     ]
-
     PAYMENT_STATUS = [
-        ('done', 'DONE'),
-        ('pending', 'PENDING'), 
-        ('failed', 'FAILED')
-    ]
-
-    CUSTOMER_SEGMENT_CHOICES = [
-        ('self_employee', 'Self Employment'),
-        ('professional', 'Professional')
-    ]
-
-    APPLICATION_STATUS_CHOICES = [
-        ('in_progress', 'In progress'),
-        ('approved', 'Approved'),
+        ('Initiated', 'Initiated'),
+        ('Pending', 'Pending'),
+        ('Successful', 'Successful'),
+        ('Failed', 'Failed'),
     ]
     
+    APPLICATION_STATUS_CHOICES = [
+        ('ro_phase', 'Review Phase'),
+        ('ap_phase', 'Approval Phase'),
+        ('rej_phase', 'Rejection Phase'),
+     ]
+    CUSTOMER_SEGMENT_CHOICES = [
+        ('segment1', 'Segment 1'),
+        ('segment2', 'Segment 2'),
+        ('segment3', 'Segment 3'),
+     ]
     IS_EXISTING_CHOICES = [
         ('Yes', 'Yes'),
         ('No', 'No')
     ]
+
+    FORWARD_STATUS_BINDING = {
+    "ro_phase":"do_phase",
+    "do_phase":"technicalofficer",
+    "technicalofficer":"bm_phase",
+    "bm_phase":"cluster",
+    "cluster":"sanctioned",
+    }

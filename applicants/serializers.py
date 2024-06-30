@@ -13,7 +13,13 @@ class ApplicantsSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(ApplicantsSerializer, self).to_representation(instance)
-        representation['lead'] = instance.lead.lead_id
+        if instance.lead:
+            representation['lead'] = instance.lead.lead_id
         representation['paymentedetails'] = instance.paymentedetails.payment_id
+        if instance.comment:
+            representation['comment'] = instance.comment.comment
+        representation['created_by'] = {
+            'ro_name': instance.created_by.username,
+            'employee_id': instance.created_by.emp_id,
+        }
         return representation
-    

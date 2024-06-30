@@ -3,12 +3,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data
+from utils import response_data, save_comment
 from user_auth.models import User
 from .models import Leads
 from .serializers import LeadsSerializer
 
 from rest_framework import permissions
+from kyc.models import KYCDetails
 
 class LeadView(APIView):
     serializer_class = LeadsSerializer
@@ -40,9 +41,13 @@ class LeadView(APIView):
                     else request.data[field].capitalize()
                 )
         data['assigned_to'] = user.pk
+        comment = save_comment(data.get('comment'))
+        if comment:
+            data['comment'] = comment.pk
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
-            serializer.save()
+            data = serializer.save()
+            KYCDetails.objects.create(lead_id =data, kyc_verified=False, kyc_document_verified=False)
             return Response(
                 response_data(False, "Lead created successfully", serializer.data),
                 status=status.HTTP_200_OK,
@@ -55,7 +60,7 @@ class LeadView(APIView):
 
     def get(self, request):
         try:
-            leads = self.queryset.filter(assigned_to__email = request.user.email)
+            leads = self.queryset.filter(assigned_to__email = request.user.email).order_by('-lead_id')
             if leads:
                 serializer = self.serializer_class(leads, many=True)
                 return Response(

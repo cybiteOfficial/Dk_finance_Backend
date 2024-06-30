@@ -4,22 +4,32 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import ApplicantsSerializer
-from .models import Applicants
+from .models import Applicants, AuditTrail
 from leads.models import Leads
 from phonepay.models import Payment
+from user_auth.models import User
 
-from utils import response_data
+from utils import response_data, save_comment, generate_OrderID, generate_applicationID
 from pagination import CommonPagination
+from choices import Choices
+from django.db import transaction
+from kyc.models import KYCDetails, DocumentsUpload
+
 
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Applicants.objects.all()
+    queryset = Applicants.objects.filter(is_active=True).order_by('-updated_at')
     pagination_class = CommonPagination
 
     def get(self, request):
         try:
             application_id = request.query_params.get('application_id', None)
+            user_email = request.user.email  
+
+            user = User.objects.filter(email = user_email)
+            for details in user:
+                user_type = details.user_type
             
             if application_id:
                 if self.queryset.filter(application_id = application_id).exists():
@@ -28,9 +38,16 @@ class ApplicantAPIView(APIView):
                     return Response(
                     response_data(True, "Not found any Applicant."), status.HTTP_200_OK
                 )
-            else:
+        
+            elif user_type == 'md' or user_type == 'cluster':
                 applicant_objs = self.queryset.all()
-            
+
+            else:
+                user = User.objects.filter(email = user_email)
+                user_uuid = user[0].pk
+                applicant_objs = self.queryset.filter(created_by = user_uuid)
+
+                
             paginator = self.pagination_class()
             paginated_res = paginator.paginate_queryset(applicant_objs, request)
         
@@ -68,6 +85,10 @@ class ApplicantAPIView(APIView):
         
         data['paymentedetails'] = payment_obj.pk
         data['lead'] = lead_obj.pk
+
+        comment = save_comment(data.get('comment'))
+        if comment:
+            data['comment'] = comment.pk
         
         serializer = self.serializer_class(data=data)
         try:
@@ -87,3 +108,71 @@ class ApplicantAPIView(APIView):
                 response_data(True, e, serializer.errors),
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+class CreateAppForPaymentReference(APIView):
+    serializer_class = ApplicantsSerializer
+    permission_classes = (IsAuthenticated,)
+    queryset = Applicants.objects.all()
+    pagination_class = CommonPagination
+
+    def post(self, request):
+        username = request.user.username
+        order_id = generate_OrderID()
+        application_id = generate_applicationID()
+        # kyc_id = request.data.get('kyc_id')
+        lead_id = request.query_params.get('lead_id')
+
+        created_by = User.objects.get(username = username)
+        
+        if order_id:
+            Payment.objects.create(order_id=order_id)
+            paymt_obj = Payment.objects.get(order_id=order_id)
+        if lead_id:
+            lead_obj = Leads.objects.get(lead_id=lead_id)
+            if lead_obj == None:
+                return Response(
+                    response_data(True, "Lead id not found"),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            return Response(
+                response_data(True, "Lead id is required"),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Applicants.objects.create(application_id=application_id, paymentedetails=paymt_obj, lead = lead_obj, created_by=created_by)
+        applicant = Applicants.objects.get(paymentedetails=paymt_obj)
+        # DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
+        serializer = self.serializer_class(applicant)
+        return Response(
+            response_data(False, "Applicant created successfully", serializer.data),
+            status=status.HTTP_200_OK,
+        )
+
+class UpdateApplicationStatus(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            status_list = Choices.FORWARD_STATUS_BINDING
+            app_ids = eval(request.data.get("applications_ids"))
+            event = Applicants.objects.filter(application_id__in=app_ids).values('application_id', 'status')
+            data = {}
+            for item in event:
+                if data.get(item["status"]):
+                    data.get(item["status"]).append(item["application_id"])
+                else:
+                    data[item["status"]]= [item["application_id"]]
+            for key, value in data.items():
+                new_status = status_list.get(key)
+                applicant_to_update = Applicants.objects.filter(application_id__in=app_ids)
+                applicant_to_update.update(status= new_status)
+
+                with transaction.atomic():
+                    for applicant in applicant_to_update:
+                        audit_trail = AuditTrail.objects.create(application_id=applicant, current_status=key, updated_status=new_status, updated_by=request.user)
+                        created_at = audit_trail.created_at
+                        Applicants.objects.filter(application_id = applicant).update(updated_at = created_at, status = new_status)
+                        
+                return Response(response_data(False, "Status updated successfully"), status=status.HTTP_200_OK)
+        except:
+            return Response(response_data(True, "status not updated"), status=status.HTTP_400_BAD_REQUEST)

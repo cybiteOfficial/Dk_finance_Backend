@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'phonepay',
     'loan',
     'collateral_details',
+    'customer_application',
+    'print_document',
 ]
 
 MIDDLEWARE = [
@@ -154,3 +156,5 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", None)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
 ALLOWED_HOSTS = ['172.31.3.20']
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
