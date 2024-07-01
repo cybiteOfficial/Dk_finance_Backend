@@ -54,9 +54,11 @@ class SignInView(APIView):
             )
             if user:
                 response, status_code = OauthGetToken(data.get('username'), data.get('password'))
+                res = response.json()
                 if status_code ==  200:
+                    res['user_type'] = user.user_type
                     return Response(
-                        response_data(False, "Successfully login.", response.json()),
+                        response_data(False, "Successfully login.", res),
                         status=status.HTTP_200_OK
                     )
                 else:

@@ -32,7 +32,8 @@ class Choices:
     
     CUSTOMER_ROLE_CHOICES = [
         ('applicant', 'APPLICANT'),
-        ('co_applicant', 'CO-APPLICANT')
+        ('co_applicant', 'CO-APPLICANT'),
+        ('guarantor', 'GUARANTOR')
     ]
 
     CUSTOMER_TYPE_CHOICES = [
