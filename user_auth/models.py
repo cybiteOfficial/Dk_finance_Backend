@@ -41,10 +41,10 @@ class BankDetails(BaseModel):
     country = models.CharField(max_length=100, default="India")
     state = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
-    pincode = models.CharField(max_length=20)
+    pincode = models.CharField(max_length=6)
     currency = models.CharField(max_length=10, default="INR")
-    description = models.TextField(null=True)
-    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
+    description = models.TextField(null=True, blank=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True, blank=True)
 
 
 class CustomUserManager(BaseUserManager):

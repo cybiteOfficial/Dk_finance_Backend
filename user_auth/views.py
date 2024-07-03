@@ -5,8 +5,9 @@ from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model, authenticate
 
-from .serializers import SignUpSerializer, SignInSerializer, UserSerializer
+from .serializers import SignUpSerializer, SignInSerializer, UserSerializer, BankDetailsSerializer
 from utils import response_data, OauthGetToken, save_comment, generate_empID
+from .models import User, BankDetails
 
 class SignUpView(APIView):
     permission_classes = (AllowAny,)
@@ -90,14 +91,25 @@ class UserView(APIView):
 
     def get(self, request):
         try:
-            current_user = request.user
-            serializer = self.serializer_class(current_user)
+            user = request.user
+            bank_branch = user.bank_branch
+            
+            if user.user_type == 'ro' or user.user_type == 'do' or user.user_type == 'technicalofficer':
+                queryset = User.objects.filter(bank_branch=bank_branch).order_by('-created_at')
+                
+            else:
+                queryset = User.objects.all()
+                
+            serializer = self.serializer_class(queryset, many=True)
+            
             return Response(
-                response_data(False, "User found.", serializer.data), status.HTTP_200_OK
+                response_data(False, serializer.data),
+                status=status.HTTP_200_OK,
             )
+
         except Exception as e:
             return Response(
-                response_data(True, "Something went wrong"), status.HTTP_400_BAD_REQUEST
+                response_data(True, "Something went wrong", str(e)), status.HTTP_400_BAD_REQUEST
             )
         
     def put(self, request):
@@ -136,15 +148,57 @@ class UserView(APIView):
             )
 
     def delete(self, request):
-        pk = request.query_params.get("pk")
-        user_obj = self.get_user(pk)
-        if user_obj :
-            if not request.user.is_superuser:
+        username = request.query_params.get('username')
+        try:
+            user = User.objects.get(username=username, is_active=True)
+            
+            if user:
+                user.is_active = False
+                user.save()
                 return Response(
-                    response_data(True, "Permission denied for the user."),
-                    status.HTTP_401_UNAUTHORIZED,
+                    response_data(False, "User deleted successfully"),
+                    status=status.HTTP_200_OK,
                 )
-            user_obj.delete()
-            return Response(response_data(False, "User Deleted."), status.HTTP_200_OK)
-        else:
-            return Response(response_data(True, "User not found."), status.HTTP_404_NOT_FOUND)
+            else:
+                return Response(
+                    response_data(True, "User not found"),
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        
+        except Exception as e:
+            return Response(
+                response_data(True, str(e)),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+
+class BankBranchView(APIView):
+    permission_classes = (IsAuthenticated,)
+    
+    def post(self, request):
+        data = request.data 
+        
+        comment = save_comment(data.get('comment'))
+        if comment:
+            data['comment'] = comment.pk
+        
+        serializer = BankDetailsSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                response_data(False, "Created Successfully.", serializer.data),
+                status=status.HTTP_201_CREATED,
+            )
+            
+        return Response(
+                response_data(True, serializer.errors),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+    def get(self, request):
+        queryset = BankDetails.objects.all()
+        serializer = BankDetailsSerializer(queryset, many=True)
+        return Response(
+            response_data(False, "Fetched Successfully.", serializer.data),
+            status=status.HTTP_200_OK,
+        )

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from user_auth.models import User, Comments
+from user_auth.models import User, Comments, BankDetails
 from django.contrib.auth.models import Group, Permission
 
 from utils import generate_empID
@@ -14,6 +14,19 @@ class UserSerializer(serializers.ModelSerializer):
         representation = super(UserSerializer, self).to_representation(instance)
         representation['bank_branch'] = instance.bank_branch.bank_name
         return representation
+    
+    
+class BankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BankDetails
+        fields = '__all__'
+        
+    def to_representation(self, instance):
+        representation = super(BankDetailsSerializer, self).to_representation(instance)
+        if instance.comment:
+            representation['comment'] = instance.comment.comment
+        return representation
+
 
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
