@@ -6,8 +6,6 @@ from django.utils.module_loading import import_string
 class DatabaseErrorHandler(logging.Handler):
     def emit(self, record):
         ErrorLog = apps.get_model('error_logs', 'ErrorLog')
-                    
-        record.asctime = self.formatTime(record)
         
         ErrorLog.objects.create(
             error_type=record.levelname,
