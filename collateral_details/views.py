@@ -8,6 +8,7 @@ from applicants.models import Applicants
 from constant import Constants
 from utils import response_data, save_comment, make_s3_connection, upload_file_to_s3_bucket, get_content_type, create_presigned_url
 from Dev_Kripa_Finance.settings.base import MAX_UPLOAD_SIZE
+from error_logs.models import UserLog
 
 class CollateralDetailsAPIView(APIView):
     serializer_class = CollateralDetailsSerializer
@@ -21,9 +22,10 @@ class CollateralDetailsAPIView(APIView):
             return None
     
     def post(self, request):
-        data = request.data
-        collateral_id = data.get('collateral_id')
-        application_id = data.get('applicant_id')
+        data = request.data.copy()
+        data.pop('documentUpload', None)
+        collateral_id = request.data.get('collateral_id')
+        application_id = request.data.get('applicant_id')
         if Applicants.objects.filter(application_id = application_id).exists():
             applicant = Applicants.objects.get(application_id = application_id)
             data['applicant'] = applicant.pk
@@ -32,7 +34,7 @@ class CollateralDetailsAPIView(APIView):
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
 
-        comment = save_comment(data.get('comment'))
+        comment = save_comment(request.data.get('comment'))
         if comment:
             data['comment'] = comment.pk
             
@@ -66,6 +68,15 @@ class CollateralDetailsAPIView(APIView):
         try:
             if serializer.is_valid():
                 serializer.save()
+                
+                # Logs
+                # UserLog.objects.create(
+                #     user=request.user.username, 
+                #     api='POST api/v1/collateral_details',
+                #     details=f'created collateral details for {application_id}',
+                #     applicant=application_id,
+                # )
+                
                 return Response(
                     response_data(False, "success", serializer.data),
                     status=status.HTTP_201_CREATED,
@@ -91,17 +102,19 @@ class CollateralDetailsAPIView(APIView):
                 serializer = self.serializer_class(collateral_obj, many=True)
                 for obj in serializer.data:
                     file_url = obj['documentUpload']
-                    filename = file_url.split('/')[-1]
-                    content_type = get_content_type(filename=filename)
-                    s3_client = make_s3_connection()
-                    presigned_url = s3_client.generate_presigned_url('get_object',
-                                                    Params={'Bucket': Constants.BUCKET_FOR_KYC,
-                                                            'Key': f"collatral_doc/{filename}",
-                                                            'ResponseContentDisposition': 'inline',
-                                                            'ResponseContentType': content_type,
-                                                    },
-                                                    ExpiresIn=3600)
-                    obj['documentUpload'] = presigned_url
+                    if file_url:
+                        filename = file_url.split('/')[-1]
+                        content_type = get_content_type(filename=filename)
+                        s3_client = make_s3_connection()
+                        presigned_url = s3_client.generate_presigned_url('get_object',
+                                                        Params={'Bucket': Constants.BUCKET_FOR_KYC,
+                                                                'Key': f"collatral_doc/{filename}",
+                                                                'ResponseContentDisposition': 'inline',
+                                                                'ResponseContentType': content_type,
+                                                        },
+                                                        ExpiresIn=3600)
+                        obj['documentUpload'] = presigned_url
+                    
                 return Response(
                     response_data(False, "collateral details found", serializer.data),
                     status=status.HTTP_200_OK,
