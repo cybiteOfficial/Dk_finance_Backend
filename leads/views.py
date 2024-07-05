@@ -23,8 +23,14 @@ class LeadView(APIView):
             return None
     
     def post(self, request):
-        if User.objects.filter(email=request.user.email).exists():  
+        if User.objects.filter(email=request.user.email).exists():
+            if User.objects.get(email=request.user.email).user_type != 'ro':
+                return Response(
+                    response_data(True, "User not have permission"),
+                    status.HTTP_400_BAD_REQUEST
+                )
             user = User.objects.get(email=request.user.email, user_type = 'ro')
+
         else:
             return Response(
                 response_data(True, "User not found"), status.HTTP_400_BAD_REQUEST
