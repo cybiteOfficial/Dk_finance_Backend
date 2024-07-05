@@ -9,6 +9,7 @@ from constant import Constants
 from utils import response_data, save_comment, make_s3_connection, upload_file_to_s3_bucket, get_content_type, create_presigned_url
 from Dev_Kripa_Finance.settings.base import MAX_UPLOAD_SIZE
 from error_logs.models import UserLog
+from user_auth.models import User
 
 class CollateralDetailsAPIView(APIView):
     serializer_class = CollateralDetailsSerializer
@@ -68,14 +69,18 @@ class CollateralDetailsAPIView(APIView):
         try:
             if serializer.is_valid():
                 serializer.save()
-                
+
                 # Logs
-                # UserLog.objects.create(
-                #     user=request.user.username, 
-                #     api='POST api/v1/collateral_details',
-                #     details=f'created collateral details for {application_id}',
-                #     applicant=application_id,
-                # )
+                logged_user = User.objects.get(username=request.user.username)
+                api = 'POST api/v1/collateral_details'
+                details = f'created collateral details for {application_id}'
+                applicant = Applicants.objects.get(application_id = application_id)
+                UserLog.objects.create(
+                    user=logged_user, 
+                    api=api,
+                    details=details, 
+                    applicant_id=applicant.pk
+                )
                 
                 return Response(
                     response_data(False, "success", serializer.data),
@@ -114,6 +119,18 @@ class CollateralDetailsAPIView(APIView):
                                                         },
                                                         ExpiresIn=3600)
                         obj['documentUpload'] = presigned_url
+                
+                # Logs
+                logged_user = User.objects.get(username=request.user.username)
+                api = 'GET api/v1/collateral_details'
+                details = f'viewed collateral details for {application_id}'
+                applicant = Applicants.objects.get(application_id = application_id)
+                UserLog.objects.create(
+                    user=logged_user, 
+                    api=api,
+                    details=details, 
+                    applicant_id=applicant.pk
+                )
                     
                 return Response(
                     response_data(False, "collateral details found", serializer.data),
@@ -125,6 +142,19 @@ class CollateralDetailsAPIView(APIView):
                 if self.queryset.filter(collateral_id=collateral_id).exists():
                     collateral_obj = self.queryset.get(collateral_id=collateral_id)
                     serializer = self.serializer_class(collateral_obj)
+                    
+                    # Logs
+                    logged_user = User.objects.get(username=request.user.username)
+                    api = 'GET api/v1/collateral_details'
+                    details = f'viewed collateral details for {collateral_id}'
+                    applicant = Applicants.objects.get(application_id = application_id)
+                    UserLog.objects.create(
+                        user=logged_user, 
+                        api=api,
+                        details=details, 
+                        applicant_id=applicant.pk
+                    )
+                
                     return Response(
                         response_data(False, "collateral details found", serializer.data),
                         status=status.HTTP_200_OK,
@@ -139,6 +169,7 @@ class CollateralDetailsAPIView(APIView):
                     response_data(True, "Collateral detail not found"),
                     status=status.HTTP_404_NOT_FOUND,
                 )
+                
         except Exception as e:
             return Response(
                 response_data(True, e),
@@ -152,6 +183,21 @@ class CollateralDetailsAPIView(APIView):
             serializer = self.serializer_class(collateral, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
+                
+                # Logs
+                logged_user = User.objects.get(username=request.user.username)
+                api = 'PUT api/v1/collateral_details'
+                details = f'viewed collateral details for {collateral_id}'
+                application_id = serializer.data['applicant']
+                print(application_id)
+                applicant = Applicants.objects.get(uuid = application_id)
+                UserLog.objects.create(
+                    user=logged_user, 
+                    api=api,
+                    details=details, 
+                    applicant_id=applicant.pk
+                )
+                
                 return Response(
                     response_data(False, "Collateral detail updated successfully", serializer.data),
                     status=status.HTTP_200_OK,
