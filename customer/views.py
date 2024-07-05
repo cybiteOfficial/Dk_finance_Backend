@@ -11,6 +11,8 @@ from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, s
 from rest_framework import status
 from pagination import CommonPagination
 from django.conf import settings
+from user_auth.models import User
+from error_logs.models import UserLog
 
 class CustomerDetailsAPIView(generics.ListCreateAPIView):
     queryset = CustomerDetails.objects.all()
@@ -33,6 +35,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
             return address_serializer.data
         else:
             return False
+        
     def get_customer(self, customer_id):
         try:
             return self.queryset.get(cif_id=customer_id)
@@ -58,7 +61,18 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     serializer = self.serializer_class(customer_obj)
                     customer_uuid = serializer.data['uuid']
                     address_data = CustomerAddress.objects.filter(customer_id = customer_uuid)
+                    file_url = serializer.data['profile_photo']
+                    presigned_url = ''
+                    if file_url:
+                        filename = file_url.split('/')[-1]
+                        content_type = get_content_type(filename=filename)
+                        presigned_url = create_presigned_url(
+                                                                filename=filename,
+                                                                doc_type='profile-photo',
+                                                                content_type=content_type
+                                                            )
                     response['customer_data'] = serializer.data
+                    response['customer_data']['profile_photo'] = presigned_url
                     if address_data:
                         for data in address_data:
                             if data.is_current == True and data.is_permanent == False:
@@ -72,6 +86,19 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     # paginated_res = paginator.paginate_queryset([customer_obj], request)
                     # serializer = self.serializer_class(paginated_res, many=True)
                     # return paginator.get_paginated_response(serializer.data)
+                    
+                    # Logs
+                    logged_user = User.objects.get(username=request.user.username)
+                    api = 'GET api/v1/customers'
+                    details = f'viewed customer details of {customer_id}'
+                    applicant = Applicants.objects.get(application_id = serializer.data['applicant'])
+                    UserLog.objects.create(
+                        user=logged_user, 
+                        api=api,
+                        details=details, 
+                        applicant_id=applicant.pk
+                    )
+                    
                     return Response(response_data(False, "customer data", response))
                 else:
                     return Response(
@@ -98,6 +125,20 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                                                                         content_type=content_type
                                                                     )
                                 applicant.update({'profile_photo': presigned_url})
+                                
+                        
+                        # Logs
+                        logged_user = User.objects.get(username=request.user.username)
+                        api = 'GET api/v1/customers'
+                        details = f'viewed customer details for {application_id}'
+                        applicant = Applicants.objects.get(application_id = application_id)
+                        UserLog.objects.create(
+                            user=logged_user, 
+                            api=api,
+                            details=details, 
+                            applicant_id=applicant.pk
+                        )
+                    
                         return paginator.get_paginated_response(serializer.data)
                 else:
                     return Response(
@@ -165,6 +206,19 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     "current_address": current_address_serializer_data if current_address_serializer_data else {},
                     "permanent_address": permanent_address_serializer_data if permanent_address_serializer_data else current_address_serializer_data,
                 }
+                
+                # Logs
+                logged_user = User.objects.get(username=request.user.username)
+                api = 'POST api/v1/customers'
+                details = f'created customer {serializer.data["cif_id"]}'
+                applicant = Applicants.objects.get(application_id = customer_data['application_id'])
+                UserLog.objects.create(
+                    user=logged_user, 
+                    api=api,
+                    details=details, 
+                    applicant_id=applicant.pk
+                )
+                
                 return Response(
                     response_data(False, "Customer created successfully", response),
                     status=status.HTTP_200_OK,
@@ -182,7 +236,6 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
     def put(self, request):
         try:
             data = request.data.copy()
-            # is_permanent = eval(data.get('is_permanent').capitalize())
             customer_data = json.loads(data.get('customer_data'))
             cur_addr = data.get('current_address')
             current_address = eval(cur_addr) if cur_addr else None
@@ -241,6 +294,19 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     'current_address': current_address_serializer_data,
                     'permanent_address': permanent_address_serializer_data,
                 }
+                
+                
+                # Logs
+                logged_user = User.objects.get(username=request.user.username)
+                api = 'PUT api/v1/customers'
+                details = f'updated customer details of {customer_id}'
+                applicant = Applicants.objects.get(application_id = response['customer_details']['applicant'])
+                UserLog.objects.create(
+                    user=logged_user, 
+                    api=api,
+                    details=details, 
+                    applicant_id=applicant.pk
+                )
                 
                 return Response(
                     response_data(False, "Customer updated successfully.", response),
