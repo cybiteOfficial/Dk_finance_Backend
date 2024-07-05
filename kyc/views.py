@@ -10,6 +10,8 @@ from .serializers import KycDetailsSerializer, DocumentUploadSerializer
 from constant import Constants
 from applicants.models import Applicants
 from Dev_Kripa_Finance.settings.base import MAX_UPLOAD_SIZE
+from user_auth.models import User
+from error_logs.models import UserLog
 
 class KYCVIew(APIView):
     serializer_class = KycDetailsSerializer
@@ -219,7 +221,22 @@ class DocumentsUploadVIew(APIView):
                     return Response(
                         response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
                     )
-                
+            
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'POST api/v1/document_upload'
+            if app_id:
+                details = f'uploaded documents for {app_id}'
+            if kyc_id:
+                details = f'uploaded documents for {kyc_id}'
+            applicant = Applicants.objects.get(application_id = app_id) if app_id else None
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk if app_id else None
+            )
+            
             return Response(
                 response_data(False, "Document uploaded successfully", response),
                 status=status.HTTP_200_OK,
@@ -253,6 +270,21 @@ class DocumentsUploadVIew(APIView):
             file['file'] = presigned_url
 
         if serializer:
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'GET api/v1/upload_document'
+            if application_id:
+                details = f'viewed documents of {application_id}'
+            if kyc_id:
+                details = f'viewed kyc documents of {kyc_id}'
+            applicant = Applicants.objects.get(application_id = application_id) if application_id else None
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk if application_id else None
+            )
+            
             return Response(
             response_data(False, "Documents Lists", serializer.data),
             status=status.HTTP_200_OK,
@@ -304,6 +336,21 @@ class DocumentsUploadVIew(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )    
         
+        # Logs
+        logged_user = User.objects.get(username=request.user.username)
+        api = 'PUT api/v1/upload_document'
+        if document_type == 'kyc':
+            details = f'updated document(s) for {response[0]["kyc"]}'
+        else:
+            details = f'updated document(s) for {response[0]["application"]}'
+        applicant = Applicants.objects.get(application_id = response[0]["application"]) if document_type != 'kyc' else None
+        UserLog.objects.create(
+            user=logged_user, 
+            api=api,
+            details=details, 
+            applicant_id=applicant.pk if document_type != 'kyc' else None
+        )
+        
         return Response(
             response_data(False, "Document uploaded successfully", response),
             status=status.HTTP_200_OK,
@@ -315,7 +362,25 @@ class DocumentsUploadVIew(APIView):
         
         if DocumentsUpload.objects.filter(uuid = document_uuid).exists():
             document = DocumentsUpload.objects.get(uuid = document_uuid)
+            applicant = document.application
+            kyc = document.kyc
             document.delete()
+                
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'DELETE api/v1/upload_document'
+            if applicant:
+                details = f'deleted document of {applicant}'
+            if kyc:
+                details = f'deleted document of {kyc}'
+            applicant = Applicants.objects.get(application_id = applicant) if applicant else None
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk if applicant else None
+            )
+                    
             return Response(
                 response_data(False, "Document deleted successfully"),
                 status=status.HTTP_200_OK,
