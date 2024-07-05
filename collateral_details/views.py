@@ -7,6 +7,7 @@ from .serializers import CollateralDetailsSerializer
 from applicants.models import Applicants
 from constant import Constants
 from utils import response_data, save_comment, make_s3_connection, upload_file_to_s3_bucket, get_content_type, create_presigned_url
+from Dev_Kripa_Finance.settings.base import MAX_UPLOAD_SIZE
 
 class CollateralDetailsAPIView(APIView):
     serializer_class = CollateralDetailsSerializer
@@ -20,7 +21,7 @@ class CollateralDetailsAPIView(APIView):
             return None
     
     def post(self, request):
-        data = request.data.copy()
+        data = request.data
         collateral_id = data.get('collateral_id')
         application_id = data.get('applicant_id')
         if Applicants.objects.filter(application_id = application_id).exists():
@@ -37,6 +38,11 @@ class CollateralDetailsAPIView(APIView):
             
         if request.FILES.get('documentUpload'):
             file_obj = request.FILES.get('documentUpload')
+            if file_obj.size > MAX_UPLOAD_SIZE:
+                return Response(
+                    response_data(True, "File size too large."),
+                    status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                )
             bucket_name = Constants.BUCKET_FOR_KYC
             file_path = f"collatral_doc/{file_obj}"
             s3_conn = make_s3_connection()

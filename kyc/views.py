@@ -9,6 +9,7 @@ from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
 from constant import Constants
 from applicants.models import Applicants
+from Dev_Kripa_Finance.settings.base import MAX_UPLOAD_SIZE
 
 class KYCVIew(APIView):
     serializer_class = KycDetailsSerializer
@@ -22,7 +23,7 @@ class KYCVIew(APIView):
             return None
     
     def post(self, request):
-        data = request.data.copy()
+        data = request.data
         lead_id = request.data.get('lead_id')
         if Leads.objects.filter(lead_id=lead_id).exists():
             lead_obj = Leads.objects.get(lead_id=lead_id)
@@ -153,7 +154,7 @@ class DocumentsUploadVIew(APIView):
 
     def post(self, request):
         try:
-            data = request.data.copy()
+            data = request.data
             kyc_id = data.get('kyc_id', None)
             app_id = data.get('application_id', None)
             documents = data.get('documents')
@@ -163,6 +164,11 @@ class DocumentsUploadVIew(APIView):
             
             files = []
             for uploaded_file in data.getlist('file'):
+                if uploaded_file.size > MAX_UPLOAD_SIZE:
+                    return Response(
+                        response_data(True, "File too big."),
+                        status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    )
                 files.append(uploaded_file)
 
             response = []
