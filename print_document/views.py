@@ -16,6 +16,8 @@ from kyc.models import DocumentsUpload
 from kyc.serializers import DocumentUploadSerializer
 from loan.models import Loan
 from loan.serializers import LoanSerializer
+from error_logs.models import UserLog
+from user_auth.models import User
 
 class PrintDocumentView(APIView):
 
@@ -77,7 +79,6 @@ class PrintDocumentView(APIView):
 
     def get(self, request):
         application_id = request.query_params.get('application_id')
-        kyc_id = request.query_params.get('kyc_id')
 
         if Applicants.objects.filter(application_id = application_id).exists():
             
@@ -112,6 +113,17 @@ class PrintDocumentView(APIView):
             "document_details_other": other_document_details,
             "document_details_photos": photos_document_details,
         }
+        
+        # Logs
+        logged_user = User.objects.get(username=request.user.username)
+        api = 'GET api/v1/print_document'
+        details = f'sanctioned letter for {request.query_params.get("application_id")}'
+        UserLog.objects.create(
+            user=logged_user, 
+            api=api,
+            details=details, 
+            applicant_id=application_id
+        )
 
         return Response(
             response_data(False, "Details found", data),
