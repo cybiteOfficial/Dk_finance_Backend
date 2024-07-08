@@ -4,10 +4,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model, authenticate
+from django.utils import timezone
 
 from .serializers import SignUpSerializer, SignInSerializer, UserSerializer, BankDetailsSerializer
 from utils import response_data, OauthGetToken, save_comment, generate_empID
 from .models import User, BankDetails
+from error_logs.models import UserLog
 
 class SignUpView(APIView):
     permission_classes = (AllowAny,)
@@ -58,6 +60,19 @@ class SignInView(APIView):
                 res = response.json()
                 if status_code ==  200:
                     res['user_type'] = user.user_type
+                    User.objects.filter(username=serializer.validated_data["username"])\
+                                        .update(last_login=timezone.now())
+                    
+                    # Logs
+                    logged_user = User.objects.get(username=serializer.validated_data["username"])
+                    api = 'POST api/v1/signin'
+                    details = f'User {(serializer.validated_data["username"]).upper()} logged in'
+                    UserLog.objects.create(
+                        user=logged_user, 
+                        api=api,
+                        details=details, 
+                    )
+                    
                     return Response(
                         response_data(False, "Successfully login.", res),
                         status=status.HTTP_200_OK
