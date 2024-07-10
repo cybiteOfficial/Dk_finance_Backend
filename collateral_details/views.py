@@ -189,8 +189,7 @@ class CollateralDetailsAPIView(APIView):
                 api = 'PUT api/v1/collateral_details'
                 details = f'viewed collateral details for {collateral_id}'
                 application_id = serializer.data['applicant']
-                print(application_id)
-                applicant = Applicants.objects.get(uuid = application_id)
+                applicant = Applicants.objects.get(application_id = application_id)
                 UserLog.objects.create(
                     user=logged_user, 
                     api=api,
