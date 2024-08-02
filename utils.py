@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 import requests, base64, random, string
 from constant import Constants
+from django.db.utils import OperationalError, ProgrammingError
 
 import logging
 import boto3, os
@@ -105,19 +106,23 @@ def generate_empID():
     
     from user_auth.models import User
     
-    if User.objects.exists():
-        users_with_new_format = User.objects.filter(emp_id__regex=r'^EMP\d{4}$')
-        if users_with_new_format:
-            last_user = users_with_new_format.order_by('-emp_id').first()
-            last_sequence = int(last_user.emp_id[3:])
+    try:
+        if User.objects.exists():
+            users_with_new_format = User.objects.filter(emp_id__regex=r'^EMP\d{4}$')
+            if users_with_new_format:
+                last_user = users_with_new_format.order_by('-emp_id').first()
+                last_sequence = int(last_user.emp_id[3:])
+            else:
+                last_sequence = 0
         else:
             last_sequence = 0
-    else:
-        last_sequence = 0
 
-    emp_id = "EMP" + (last_sequence + 1).__str__().zfill(4)
+        emp_id = "EMP" + (last_sequence + 1).__str__().zfill(4)
 
-    return emp_id
+        return emp_id
+    
+    except (OperationalError, ProgrammingError):
+        return "EMP0001"
 
 
 def generate_leadID():
