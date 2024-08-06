@@ -6,10 +6,10 @@ ALLOWED_HOSTS = ['3.111.52.245', '*']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('DB_NAME','devdb'),
-        'USER': os.environ.get('DB_USER','cybite'),
-        'PASSWORD': os.environ.get('DB_PASSWORD','k7hCYJ6x;7N9brH'),
-        'HOST':os.environ.get('DB_HOST','devdb.c3muc0w4yyhm.ap-south-1.rds.amazonaws.com'),
+        'NAME': os.environ.get('DB_NAME','dev_kripa_stage'),
+        'USER': os.environ.get('DB_USER','devKripaStage'),
+        'PASSWORD': os.environ.get('DB_PASSWORD','DevKripaFinance'),
+        'HOST':os.environ.get('DB_HOST','devkripa-stage.c1moyiyguvhg.ap-south-1.rds.amazonaws.com'),
         'PORT': os.environ.get('DB_PORT','5432')
     }
 
