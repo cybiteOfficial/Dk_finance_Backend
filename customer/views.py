@@ -2,8 +2,8 @@ from rest_framework import generics
 import json
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import CustomerDetails, CustomerAddress
-from .serializers import CustomerDetailsSerializer, CustomCustomerSerializer, AddressSerializer
+from .models import CustomerDetails, CustomerAddress, CustomerKYCDetails
+from .serializers import CustomerDetailsSerializer, CustomCustomerSerializer, AddressSerializer, KYCSDetailsSerializer
 
 from applicants.models import Applicants
 from constant import Constants
@@ -19,6 +19,8 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = CustomerDetailsSerializer
     pagination_class = CommonPagination
+    
+    MAX_FILE_SIZE = settings.DATA_UPLOAD_MAX_MEMORY_SIZE
 
     def save_address(self, address_data):
         address_serializer = AddressSerializer(data=address_data)
@@ -60,6 +62,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 if customer_obj:
                     serializer = self.serializer_class(customer_obj)
                     customer_uuid = serializer.data['uuid']
+                    
                     address_data = CustomerAddress.objects.filter(customer_id = customer_uuid)
                     file_url = serializer.data['profile_photo']
                     presigned_url = ''
@@ -81,6 +84,32 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                             else:
                                 address_serializer = AddressSerializer(data)
                                 response['permanent_address'] = address_serializer.data
+                                
+                    kyc = CustomerKYCDetails.objects.get(customer_id = customer_uuid)
+                    if kyc:
+                        kyc_serializer = KYCSDetailsSerializer(kyc)
+                        aadhaar_file = kyc_serializer.data['aadhaar_file']
+                        if aadhaar_file:
+                            filename = aadhaar_file.split('/')[-1]
+                            content_type = get_content_type(filename=filename)
+                            aadhaar_file = create_presigned_url(
+                                                        filename=filename,
+                                                        doc_type='kyc',
+                                                        content_type=content_type
+                                                    )
+                        pan_file = kyc_serializer.data['pan_file']
+                        if pan_file:
+                            filename = pan_file.split('/')[-1]
+                            content_type = get_content_type(filename=filename)
+                            pan_file = create_presigned_url(
+                                                        filename=filename,
+                                                        doc_type='kyc',
+                                                        content_type=content_type
+                                                    )
+                        response['kyc_details'] = kyc_serializer.data
+                        response['kyc_details']['aadhaar_file'] = aadhaar_file
+                        response['kyc_details']['pan_file'] = pan_file
+                        
                                 
                     # paginator = self.pagination_class()
                     # paginated_res = paginator.paginate_queryset([customer_obj], request)
@@ -161,10 +190,9 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
             )
         try:
-            MAX_FILE_SIZE = settings.DATA_UPLOAD_MAX_MEMORY_SIZE
             if request.FILES.get('profile_photo'):
                 file_obj = request.FILES.get('profile_photo')
-                if file_obj.size > MAX_FILE_SIZE:
+                if file_obj.size > self.MAX_FILE_SIZE:
                     return Response(
                         response_data(True, "File size too big"), status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
                     )
@@ -187,8 +215,10 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 current_address = eval(data.get('current_address'))
                 per_addr = data.get('permanent_address', None)
                 permanent_address = eval(per_addr) if per_addr else None
+                kyc_details = eval(data.get('kyc_details', None))
                 current_address_serializer_data = {}
                 permanent_address_serializer_data = {}
+                kyc_details_serializer_data = {}
                 if current_address:
                     current_address['customer'] = customer_obj.pk
                     current_address['is_current'] = True
@@ -200,11 +230,57 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                     permanent_address['is_current'] = False
                     permanent_address['is_permanent'] = True
                     permanent_address_serializer_data = self.save_address(permanent_address)
+                    
+                if kyc_details:
+                    kyc_details['customer'] = customer_obj.pk
+                    try:
+                        if request.FILES.get('aadhaar_file'):
+                            file_obj = request.FILES.get('aadhaar_file')
+                            if file_obj.size > self.MAX_FILE_SIZE:
+                                return Response(
+                                    response_data(True, "File size too big"), status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                                )
+
+                            bucket_name = Constants.BUCKET_FOR_KYC
+                            file_path = f"KYC_Documents/{file_obj}"
+                            s3_conn = make_s3_connection()
+                            file_url = upload_file_to_s3_bucket(
+                                s3_conn, file_obj, bucket_name, file_path
+                            )
+                            if file_url:
+                                kyc_details['aadhaar_file'] = file_url
+                        else:
+                            pass
+                        if request.FILES.get('pan_file'):
+                            file_obj = request.FILES.get('pan_file')
+                            if file_obj.size > self.MAX_FILE_SIZE:
+                                return Response(
+                                    response_data(True, "File size too big"), status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                                )
+
+                            bucket_name = Constants.BUCKET_FOR_KYC
+                            file_path = f"KYC_Documents/{file_obj}"
+                            s3_conn = make_s3_connection()
+                            file_url = upload_file_to_s3_bucket(
+                                s3_conn, file_obj, bucket_name, file_path
+                            )
+                            if file_url:
+                                kyc_details['pan_file'] = file_url
+                    except Exception as e:
+                        return Response(
+                            response_data(True, e), status.HTTP_400_BAD_REQUEST
+                        )
+                    kyc = KYCSDetailsSerializer(data=kyc_details)
+                    if kyc.is_valid():
+                        print('valid')
+                        kyc.save()
+                    kyc_details_serializer_data = kyc.data
                 
                 response = {
                     "customer_data": serializer.data,
                     "current_address": current_address_serializer_data if current_address_serializer_data else {},
                     "permanent_address": permanent_address_serializer_data if permanent_address_serializer_data else current_address_serializer_data,
+                    "kyc_details": kyc_details_serializer_data if kyc_details_serializer_data else status.HTTP_400_BAD_REQUEST
                 }
                 
                 # Logs

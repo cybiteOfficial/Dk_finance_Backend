@@ -4,6 +4,7 @@ from applicants.models import Applicants
 from utils import generate_customerID
 from choices import Choices
 from user_auth.models import Comments
+from kyc.models import KYCDetails
 
 class CustomerDetails(BaseModel):
     role = models.CharField(max_length=255, choices=Choices.CUSTOMER_ROLE_CHOICES, null=False)
@@ -38,9 +39,7 @@ class CustomerDetails(BaseModel):
     educationQualification = models.CharField(max_length=255, null=True, blank=True)
     numberOfDependents = models.CharField(max_length=255,null=True, blank=True)
 
-    current_address = models.CharField(max_length=255, null=True, blank=True)
-    permanent_address = models.CharField(max_length=255,null=True, blank=True)
-    profile_photo = models.CharField(null=True, blank=True)
+    profile_photo = models.CharField(null=True, blank=True)      
     description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True, blank=True)
 
@@ -64,3 +63,11 @@ class CustomerAddress(BaseModel):
     residence_type = models.CharField(max_length=255, null=True, blank=True)
     stability_at_residence = models.CharField(max_length=255, null=True, blank=True)
     distance_from_branch = models.CharField(max_length=255, null=True, blank=True)
+    
+class CustomerKYCDetails(BaseModel):
+    customer = models.ForeignKey(CustomerDetails, on_delete=models.DO_NOTHING)
+    aadhaar_num = models.CharField(max_length=12)
+    aadhaar_file = models.CharField()
+    pan_num = models.CharField(max_length=10)
+    pan_file = models.CharField()
+    

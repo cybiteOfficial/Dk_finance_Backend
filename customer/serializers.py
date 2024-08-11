@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomerDetails, CustomerAddress
+from .models import CustomerDetails, CustomerAddress, CustomerKYCDetails
 
 class CustomerDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,6 +24,17 @@ class AddressSerializer(serializers.ModelSerializer):
         
     def to_representation(self, instance):
         representation = super(AddressSerializer, self).to_representation(instance)
+        if instance.customer:
+            representation['customer'] = instance.customer.cif_id
+        return representation
+
+class KYCSDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerKYCDetails
+        fields = '__all__'
+        
+    def to_representation(self, instance):
+        representation = super(KYCSDetailsSerializer, self).to_representation(instance)
         if instance.customer:
             representation['customer'] = instance.customer.cif_id
         return representation
