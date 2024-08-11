@@ -85,31 +85,33 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                                 address_serializer = AddressSerializer(data)
                                 response['permanent_address'] = address_serializer.data
                                 
-                    kyc = CustomerKYCDetails.objects.get(customer_id = customer_uuid)
-                    if kyc:
-                        kyc_serializer = KYCSDetailsSerializer(kyc)
-                        aadhaar_file = kyc_serializer.data['aadhaar_file']
-                        if aadhaar_file:
-                            filename = aadhaar_file.split('/')[-1]
-                            content_type = get_content_type(filename=filename)
-                            aadhaar_file = create_presigned_url(
-                                                        filename=filename,
-                                                        doc_type='kyc',
-                                                        content_type=content_type
-                                                    )
-                        pan_file = kyc_serializer.data['pan_file']
-                        if pan_file:
-                            filename = pan_file.split('/')[-1]
-                            content_type = get_content_type(filename=filename)
-                            pan_file = create_presigned_url(
-                                                        filename=filename,
-                                                        doc_type='kyc',
-                                                        content_type=content_type
-                                                    )
-                        response['kyc_details'] = kyc_serializer.data
-                        response['kyc_details']['aadhaar_file'] = aadhaar_file
-                        response['kyc_details']['pan_file'] = pan_file
-                        
+                    try:
+                        kyc = CustomerKYCDetails.objects.get(customer_id = customer_uuid)
+                        if kyc:
+                            kyc_serializer = KYCSDetailsSerializer(kyc)
+                            aadhaar_file = kyc_serializer.data['aadhaar_file']
+                            if aadhaar_file:
+                                filename = aadhaar_file.split('/')[-1]
+                                content_type = get_content_type(filename=filename)
+                                aadhaar_file = create_presigned_url(
+                                                            filename=filename,
+                                                            doc_type='kyc',
+                                                            content_type=content_type
+                                                        )
+                            pan_file = kyc_serializer.data['pan_file']
+                            if pan_file:
+                                filename = pan_file.split('/')[-1]
+                                content_type = get_content_type(filename=filename)
+                                pan_file = create_presigned_url(
+                                                            filename=filename,
+                                                            doc_type='kyc',
+                                                            content_type=content_type
+                                                        )
+                            response['kyc_details'] = kyc_serializer.data
+                            response['kyc_details']['aadhaar_file'] = aadhaar_file
+                            response['kyc_details']['pan_file'] = pan_file
+                    except:
+                        response['kyc_details'] = None    
                                 
                     # paginator = self.pagination_class()
                     # paginated_res = paginator.paginate_queryset([customer_obj], request)
@@ -399,3 +401,27 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+
+class KYCVerifyView(generics.ListCreateAPIView):
+    def post(self, request):
+        customer_id = request.query_params.get('customer_id')
+        customer = CustomerDetails.objects.get(cif_id = customer_id).pk
+        application_id = CustomerDetails.objects.get(cif_id = customer_id).applicant
+        CustomerKYCDetails.objects.filter(customer_id=customer).update(is_verified=True)
+        
+        # Logs
+        logged_user = User.objects.get(username=request.user.username)
+        api = 'POST api/v1/verify_kyc'
+        details = f'verified kyc of {customer_id}'
+        applicant = Applicants.objects.get(application_id = application_id)
+        UserLog.objects.create(
+            user=logged_user, 
+            api=api,
+            details=details, 
+            applicant_id=applicant.pk
+        )
+        
+        return Response(
+            response_data(False, "KYC Verified Successfully."),
+            status=status.HTTP_200_OK,
+        )

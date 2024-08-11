@@ -70,4 +70,5 @@ class CustomerKYCDetails(BaseModel):
     aadhaar_file = models.CharField()
     pan_num = models.CharField(max_length=10)
     pan_file = models.CharField()
+    is_verified = models.BooleanField(default=False)
     
