@@ -156,7 +156,11 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                                                                         content_type=content_type
                                                                     )
                                 applicant.update({'profile_photo': presigned_url})
-                                
+                   
+                            try:
+                                applicant['kyc_verified'] = CustomerKYCDetails.objects.get(customer_id = applicant.get('uuid')).is_verified
+                            except:
+                                applicant['kyc_verified'] = None
                         
                         # Logs
                         logged_user = User.objects.get(username=request.user.username)
