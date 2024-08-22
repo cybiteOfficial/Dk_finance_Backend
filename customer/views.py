@@ -160,7 +160,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                             try:
                                 applicant['kyc_verified'] = CustomerKYCDetails.objects.get(customer_id = applicant.get('uuid')).is_verified
                             except:
-                                applicant['kyc_verified'] = None
+                                applicant['kyc_verified'] = False
                         
                         # Logs
                         logged_user = User.objects.get(username=request.user.username)
