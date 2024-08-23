@@ -265,7 +265,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                                 )
 
                             bucket_name = Constants.BUCKET_FOR_KYC
-                            file_path = f"KYC_Documents/{file_obj}"
+                            file_path = f"KYC_documents/{file_obj}"
                             s3_conn = make_s3_connection()
                             file_url = upload_file_to_s3_bucket(
                                 s3_conn, file_obj, bucket_name, file_path
@@ -278,7 +278,6 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                         )
                     kyc = KYCSDetailsSerializer(data=kyc_details)
                     if kyc.is_valid():
-                        print('valid')
                         kyc.save()
                     kyc_details_serializer_data = kyc.data
                 
@@ -324,6 +323,7 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
             per_addr = data.get('permanent_address', None)
             permanent_address = eval(per_addr) if per_addr else None
             customer_id = request.query_params.get('customer_id')
+            kyc_details = eval(data.get('kyc_details')) if data.get('kyc_details') else None
 
             customer_obj = self.get_customer(customer_id)
             response = []
@@ -370,11 +370,92 @@ class CustomerDetailsAPIView(generics.ListCreateAPIView):
                                 response_data(True, "Permanent address is not updated", serializer.errors),
                                 status=status.HTTP_400_BAD_REQUEST,
                             )
+                            
+                if kyc_details.get('uuid'):
+                    if CustomerKYCDetails.objects.filter(uuid = kyc_details.get('uuid')).exists():
+                        
+                        if request.FILES.get('aadhaar_file'):
+                            file_obj = request.FILES.get('aadhaar_file')
+                            bucket_name = Constants.BUCKET_FOR_KYC
+                            file_path = f"KYC_documents/{file_obj}"
+                            s3_conn = make_s3_connection()
+                            file_url = upload_file_to_s3_bucket(
+                                s3_conn, file_obj, bucket_name, file_path
+                            )
+                            if file_url:
+                                kyc_details['aadhaar_file'] = file_url
+                                
+                        if request.FILES.get('pan_file'):
+                            file_obj = request.FILES.get('pan_file')
+                            bucket_name = Constants.BUCKET_FOR_KYC
+                            file_path = f"KYC_documents/{file_obj}"
+                            s3_conn = make_s3_connection()
+                            file_url = upload_file_to_s3_bucket(
+                                s3_conn, file_obj, bucket_name, file_path
+                            )
+                            if file_url:
+                                kyc_details['pan_file'] = file_url
+                        
+                        current_obj = CustomerKYCDetails.objects.get(uuid = kyc_details.get('uuid'))
+                        serializer = KYCSDetailsSerializer(current_obj, kyc_details, partial=True)
+                        if serializer.is_valid():
+                            serializer.save()
+                            kyc_details_serializer_data = serializer.data
+                        else:
+                            return Response(
+                                response_data(True, "KYC details not updated", serializer.errors),
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+                            
+                else:
+                    kyc_details['customer'] = customer_obj.pk
+                    try:
+                        if request.FILES.get('aadhaar_file'):
+                            file_obj = request.FILES.get('aadhaar_file')
+                            if file_obj.size > self.MAX_FILE_SIZE:
+                                return Response(
+                                    response_data(True, "File size too big"), status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                                )
+
+                            bucket_name = Constants.BUCKET_FOR_KYC
+                            file_path = f"KYC_Documents/{file_obj}"
+                            s3_conn = make_s3_connection()
+                            file_url = upload_file_to_s3_bucket(
+                                s3_conn, file_obj, bucket_name, file_path
+                            )
+                            if file_url:
+                                kyc_details['aadhaar_file'] = file_url
+                        else:
+                            pass
+                        if request.FILES.get('pan_file'):
+                            file_obj = request.FILES.get('pan_file')
+                            if file_obj.size > self.MAX_FILE_SIZE:
+                                return Response(
+                                    response_data(True, "File size too big"), status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+                                )
+
+                            bucket_name = Constants.BUCKET_FOR_KYC
+                            file_path = f"KYC_documents/{file_obj}"
+                            s3_conn = make_s3_connection()
+                            file_url = upload_file_to_s3_bucket(
+                                s3_conn, file_obj, bucket_name, file_path
+                            )
+                            if file_url:
+                                kyc_details['pan_file'] = file_url
+                    except Exception as e:
+                        return Response(
+                            response_data(True, e), status.HTTP_400_BAD_REQUEST
+                        )
+                    kyc = KYCSDetailsSerializer(data=kyc_details)
+                    if kyc.is_valid():
+                        kyc.save()
+                    kyc_details_serializer_data = kyc.data
                 
                 response = {
                     'customer_details': customer_serializer_data,
                     'current_address': current_address_serializer_data,
                     'permanent_address': permanent_address_serializer_data,
+                    'kyc_details': kyc_details_serializer_data
                 }
                 
                 
