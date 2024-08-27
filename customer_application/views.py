@@ -7,6 +7,8 @@ from .serializers import CafSerializer
 from applicants.models import Applicants
 from utils import response_data, save_comment
 from customer.models import CustomerDetails
+from user_auth.models import User
+from error_logs.models import UserLog
 
 class CafFomAPIView(APIView):
     serializer_class = CafSerializer
@@ -54,6 +56,19 @@ class CafFomAPIView(APIView):
             serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
+            
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'POST api/v1/caf_detail'
+            details = f'created CAF details for {application_id}, PD with {customer_id}'
+            applicant = Applicants.objects.get(application_id = application_id)
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk
+            )
+            
             return Response(response_data(False, "caf created successfully", serializer.data), status=status.HTTP_201_CREATED)
         else:
             return Response(response_data(True, "Something went wrong", serializer.errors), status=status.HTTP_400_BAD_REQUEST)
@@ -66,11 +81,25 @@ class CafFomAPIView(APIView):
                 if self.queryset.filter(applicant__application_id=application_id).exists():
                     caf_obj = self.queryset.get(applicant__application_id=application_id)
                     serializer = self.serializer_class(caf_obj)
+                    
+                    # Logs
+                    logged_user = User.objects.get(username=request.user.username)
+                    api = 'GET api/v1/caf_detail'
+                    details = f'viewed CAF details for {application_id}'
+                    applicant = Applicants.objects.get(application_id = application_id)
+                    UserLog.objects.create(
+                        user=logged_user, 
+                        api=api,
+                        details=details, 
+                        applicant_id=applicant.pk
+                    )
+                    
                     return Response(response_data(False, "CAF details found", serializer.data), status=status.HTTP_200_OK)
                 else:
                     return Response(response_data(True, "CAF not found"), status=status.HTTP_404_NOT_FOUND)
             else:
-                return Response(response_data(True, "CAF ID not provided"), status=status.HTTP_400_BAD_REQUEST)
+                return Response(response_data(True, "Application ID not provided"), status=status.HTTP_400_BAD_REQUEST)
+        
         except Exception as e:
             return Response(response_data(True, str(e)), status=status.HTTP_400_BAD_REQUEST)
 

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     'collateral_details',
     'customer_application',
     'print_document',
+    'error_logs',
 ]
 
 MIDDLEWARE = [
@@ -157,4 +159,34 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
 ALLOWED_HOSTS = ['172.31.3.20']
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'error.log'),
+            'formatter': 'verbose'
+        },
+        'db': {
+            'level': 'ERROR',
+            'class': 'error_logs.handlers.DatabaseErrorHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'db'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}

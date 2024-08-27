@@ -29,6 +29,12 @@ class Choices:
     CASE_TAG_CHOICES = [
         ('normal', 'Normal'),
     ]
+    
+    CUSTOMER_ROLE_CHOICES = [
+        ('applicant', 'APPLICANT'),
+        ('co_applicant', 'CO-APPLICANT'),
+        ('guarantor', 'GUARANTOR')
+    ]
 
     CUSTOMER_TYPE_CHOICES = [
         ('home_loan', 'HomeLoan'),
@@ -87,5 +93,5 @@ class Choices:
     "do_phase":"technicalofficer",
     "technicalofficer":"bm_phase",
     "bm_phase":"cluster",
-    "cluster":"md_phase",
+    "cluster":"sanctioned",
     }

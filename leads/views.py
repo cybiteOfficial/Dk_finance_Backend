@@ -7,6 +7,7 @@ from utils import response_data, save_comment
 from user_auth.models import User
 from .models import Leads
 from .serializers import LeadsSerializer
+from error_logs.models import UserLog
 
 from rest_framework import permissions
 from kyc.models import KYCDetails
@@ -23,8 +24,14 @@ class LeadView(APIView):
             return None
     
     def post(self, request):
-        if User.objects.filter(email=request.user.email).exists():  
+        if User.objects.filter(email=request.user.email).exists():
+            if User.objects.get(email=request.user.email).user_type != 'ro':
+                return Response(
+                    response_data(True, "User not have permission"),
+                    status.HTTP_400_BAD_REQUEST
+                )
             user = User.objects.get(email=request.user.email, user_type = 'ro')
+
         else:
             return Response(
                 response_data(True, "User not found"), status.HTTP_400_BAD_REQUEST
@@ -47,7 +54,18 @@ class LeadView(APIView):
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             data = serializer.save()
-            KYCDetails.objects.create(lead_id =data, kyc_verified=False, kyc_document_verified=False)
+            KYCDetails.objects.create(lead_id=data, kyc_verified=False, kyc_document_verified=False)
+            
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'POST api/v1/leads'
+            details = f'created lead id {data}'
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details,
+            )
+            
             return Response(
                 response_data(False, "Lead created successfully", serializer.data),
                 status=status.HTTP_200_OK,
@@ -60,9 +78,20 @@ class LeadView(APIView):
 
     def get(self, request):
         try:
-            leads = self.queryset.filter(assigned_to__email = request.user.email)
+            leads = self.queryset.filter(assigned_to__email = request.user.email).order_by('-lead_id')
             if leads:
                 serializer = self.serializer_class(leads, many=True)
+                
+                # Logs
+                logged_user = User.objects.get(username=request.user.username)
+                api = 'GET api/v1/leads'
+                details = f'viewed leads of user({request.user.username})'
+                UserLog.objects.create(
+                    user=logged_user, 
+                    api=api,
+                    details=details,
+                )
+                    
                 return Response(
                     response_data(False, "User found.", serializer.data), status.HTTP_200_OK
                 )
@@ -84,6 +113,17 @@ class LeadView(APIView):
                 serializer = self.serializer_class(lead_obj, request.data, partial=True)
                 if serializer.is_valid():
                     serializer.save()
+                    
+                    # Logs
+                    logged_user = User.objects.get(username=request.user.username)
+                    api = 'PUT api/v1/leads'
+                    details = f'updated lead {lead_id}'
+                    UserLog.objects.create(
+                        user=logged_user, 
+                        api=api,
+                        details=details,
+                    )
+                    
                     return Response(
                         response_data(False, "Successfully updated.", serializer.data),
                         status.HTTP_200_OK,

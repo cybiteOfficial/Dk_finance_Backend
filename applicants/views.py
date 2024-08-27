@@ -9,25 +9,33 @@ from leads.models import Leads
 from phonepay.models import Payment
 from user_auth.models import User
 
-from utils import response_data, save_comment, generate_OrderID
+from utils import response_data, save_comment, generate_OrderID, generate_applicationID
 from pagination import CommonPagination
 from choices import Choices
 from django.db import transaction
 from kyc.models import KYCDetails, DocumentsUpload
+from error_logs.models import UserLog
 
 
 class ApplicantAPIView(APIView):
     serializer_class = ApplicantsSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Applicants.objects.all().order_by('-updated_at')
+    queryset = Applicants.objects.filter(is_active=True).order_by('-updated_at')
     pagination_class = CommonPagination
 
     def get(self, request):
         try:
             application_id = request.query_params.get('application_id', None)
             user_email = request.user.email  
-
+            
             user = User.objects.filter(email = user_email)
+            
+            # Logs
+            logged_user = User.objects.get(username = request.user.username)
+            api = 'GET api/v1/applicants'
+            details = 'Viewed applicants'
+            UserLog.objects.create(user=logged_user, api=api, details=details)
+
             for details in user:
                 user_type = details.user_type
             
@@ -52,6 +60,7 @@ class ApplicantAPIView(APIView):
             paginated_res = paginator.paginate_queryset(applicant_objs, request)
         
             serializer = self.serializer_class(paginated_res, many= True)
+            
             return  paginator.get_paginated_response(serializer.data)
 
         except Exception as e:
@@ -94,6 +103,12 @@ class ApplicantAPIView(APIView):
         try:
             if serializer.is_valid():
                 serializer.save()
+                
+                logged_user = User.objects.get(username = request.user.username)
+                api = 'POST api/v1/applicants'
+                details = 'Created applicant'
+                UserLog.objects.create(user=logged_user, api=api, details=details)
+                
                 return Response(
                     response_data(False, "Applicant created successfully", serializer.data),
                     status=status.HTTP_200_OK,
@@ -116,18 +131,40 @@ class CreateAppForPaymentReference(APIView):
     pagination_class = CommonPagination
 
     def post(self, request):
-        user_email = request.user.email
+        username = request.user.username
         order_id = generate_OrderID()
-        kyc_id = request.data.get('kyc_id')
+        application_id = generate_applicationID()
+        # kyc_id = request.data.get('kyc_id')
+        lead_id = request.query_params.get('lead_id')
 
-        created_by = User.objects.get(email = user_email)
+        created_by = User.objects.get(username = username)
         
         if order_id:
             Payment.objects.create(order_id=order_id)
             paymt_obj = Payment.objects.get(order_id=order_id)
-        Applicants.objects.create(paymentedetails=paymt_obj, created_by = created_by)
+        if lead_id:
+            lead_obj = Leads.objects.get(lead_id=lead_id)
+            if lead_obj == None:
+                return Response(
+                    response_data(True, "Lead id not found"),
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            return Response(
+                response_data(True, "Lead id is required"),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Applicants.objects.create(application_id=application_id, paymentedetails=paymt_obj, lead = lead_obj, created_by=created_by)
         applicant = Applicants.objects.get(paymentedetails=paymt_obj)
-        DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
+        # DocumentsUpload.objects.filter(kyc__uuid = kyc_id).update(application_id = applicant)
+        
+        # logs
+        logged_user = User.objects.get(username = request.user.username)
+        api = 'POST api/v1/create_app_id'
+        details = f'Created applicant: {applicant.application_id}'
+        UserLog.objects.create(user=logged_user, api=api, details=details)
+            
         serializer = self.serializer_class(applicant)
         return Response(
             response_data(False, "Applicant created successfully", serializer.data),
@@ -156,8 +193,14 @@ class UpdateApplicationStatus(APIView):
                     for applicant in applicant_to_update:
                         audit_trail = AuditTrail.objects.create(application_id=applicant, current_status=key, updated_status=new_status, updated_by=request.user)
                         created_at = audit_trail.created_at
-                        Applicants.objects.filter(application_id = applicant).update(updated_at = created_at)
+                        Applicants.objects.filter(application_id = applicant).update(updated_at = created_at, status = new_status)
                         
+                        # logs
+                        logged_user = User.objects.get(username = request.user.username)
+                        api = 'POST api/v1/update_status'
+                        details = f'Updated status of applicant: {applicant.application_id} from {key} to {new_status}'
+                        UserLog.objects.create(user=logged_user, api=api, details=details)
+
                 return Response(response_data(False, "Status updated successfully"), status=status.HTTP_200_OK)
         except:
             return Response(response_data(True, "status not updated"), status=status.HTTP_400_BAD_REQUEST)

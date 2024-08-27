@@ -3,12 +3,15 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url
+from utils import response_data, make_s3_connection, upload_file_to_s3_bucket, save_comment, create_presigned_url, get_content_type
 from leads.models import Leads
 from .models import KYCDetails, DocumentsUpload
 from .serializers import KycDetailsSerializer, DocumentUploadSerializer
 from constant import Constants
 from applicants.models import Applicants
+from Dev_Kripa_Finance.settings.base import MAX_UPLOAD_SIZE
+from user_auth.models import User
+from error_logs.models import UserLog
 
 class KYCVIew(APIView):
     serializer_class = KycDetailsSerializer
@@ -22,7 +25,7 @@ class KYCVIew(APIView):
             return None
     
     def post(self, request):
-        data = request.data.copy()
+        data = request.data
         lead_id = request.data.get('lead_id')
         if Leads.objects.filter(lead_id=lead_id).exists():
             lead_obj = Leads.objects.get(lead_id=lead_id)
@@ -121,6 +124,9 @@ class DocumentsUploadVIew(APIView):
             return None
 
     def save_document(self, file, data, doc_type, previous_data=False):
+        file_path = ""
+        bucket_name = ""
+
         if doc_type == "kyc":
             file_path = f"KYC_documents/{file}"
             bucket_name = Constants.BUCKET_FOR_KYC
@@ -130,8 +136,7 @@ class DocumentsUploadVIew(APIView):
         elif doc_type == "photos":
             file_path = f"photographs/{file}"
             bucket_name = Constants.BUCKET_FOR_PHOTOGRAPHS_DOCUMENTS
-        else:
-            ...
+
         s3_conn = make_s3_connection()
         file_url = upload_file_to_s3_bucket(
             s3_conn, file, bucket_name, file_path
@@ -148,23 +153,10 @@ class DocumentsUploadVIew(APIView):
         else:
             return False
         
-    def get_content_type(self, filename):
-        content_type = filename.split('.')[-1]
-        if content_type == 'png': 
-            content_type = 'image/png'
-        elif content_type == 'jpg' or content_type == 'jpeg':
-            content_type = 'image/jpeg'
-        elif content_type == 'pdf':
-            content_type = 'application/pdf'
-        elif content_type == 'txt':
-            content_type = 'text/plain'
-        elif content_type == 'docx':
-            content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        return content_type
 
     def post(self, request):
         try:
-            data = request.data.copy()
+            data = request.data
             kyc_id = data.get('kyc_id', None)
             app_id = data.get('application_id', None)
             documents = data.get('documents')
@@ -174,6 +166,11 @@ class DocumentsUploadVIew(APIView):
             
             files = []
             for uploaded_file in data.getlist('file'):
+                if uploaded_file.size > MAX_UPLOAD_SIZE:
+                    return Response(
+                        response_data(True, "File too big."),
+                        status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    )
                 files.append(uploaded_file)
 
             response = []
@@ -224,7 +221,22 @@ class DocumentsUploadVIew(APIView):
                     return Response(
                         response_data(True, "Applicant not found"), status.HTTP_400_BAD_REQUEST
                     )
-                
+            
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'POST api/v1/document_upload'
+            if app_id:
+                details = f'uploaded documents for {app_id}'
+            if kyc_id:
+                details = f'uploaded documents for {kyc_id}'
+            applicant = Applicants.objects.get(application_id = app_id) if app_id else None
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk if app_id else None
+            )
+            
             return Response(
                 response_data(False, "Document uploaded successfully", response),
                 status=status.HTTP_200_OK,
@@ -253,11 +265,26 @@ class DocumentsUploadVIew(APIView):
         for file in serializer.data:
             file_url = file['file']
             filename = file_url.split('/')[-1]
-            content_type = self.get_content_type(filename=filename)
+            content_type = get_content_type(filename=filename)
             presigned_url = create_presigned_url(filename=filename, doc_type=file['document_type'], content_type=content_type)
             file['file'] = presigned_url
 
         if serializer:
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'GET api/v1/upload_document'
+            if application_id:
+                details = f'viewed documents of {application_id}'
+            if kyc_id:
+                details = f'viewed kyc documents of {kyc_id}'
+            applicant = Applicants.objects.get(application_id = application_id) if application_id else None
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk if application_id else None
+            )
+            
             return Response(
             response_data(False, "Documents Lists", serializer.data),
             status=status.HTTP_200_OK,
@@ -288,7 +315,8 @@ class DocumentsUploadVIew(APIView):
                 
                 if not file_updated:
                     doc['description'] = data.get('description')
-                    doc['comment'] = comment.pk
+                    if comment:
+                        doc['comment'] = comment.pk
                     serializer = self.serializer_class(instance=DocumentsUpload.objects.get(uuid = document_uuid), data=doc, partial=True)
                     if serializer.is_valid():
                         serializer.save()
@@ -296,7 +324,8 @@ class DocumentsUploadVIew(APIView):
 
                 else:
                     doc['description'] = data.get('description')
-                    doc['comment'] = comment.pk
+                    if comment:
+                        doc['comment'] = comment.pk
                     document_res = self.save_document(files[file_num], doc, document_type, previous_data=DocumentsUpload.objects.get(uuid = document_uuid))
                     response.append(document_res)
                     file_num += 1   
@@ -307,7 +336,57 @@ class DocumentsUploadVIew(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )    
         
+        # Logs
+        logged_user = User.objects.get(username=request.user.username)
+        api = 'PUT api/v1/upload_document'
+        if document_type == 'kyc':
+            details = f'updated document(s) for {response[0]["kyc"]}'
+        else:
+            details = f'updated document(s) for {response[0]["application"]}'
+        applicant = Applicants.objects.get(application_id = response[0]["application"]) if document_type != 'kyc' else None
+        UserLog.objects.create(
+            user=logged_user, 
+            api=api,
+            details=details, 
+            applicant_id=applicant.pk if document_type != 'kyc' else None
+        )
+        
         return Response(
             response_data(False, "Document uploaded successfully", response),
             status=status.HTTP_200_OK,
+        )
+    
+    def delete(self, request):
+        
+        document_uuid = request.data.get('document_uuid')
+        
+        if DocumentsUpload.objects.filter(uuid = document_uuid).exists():
+            document = DocumentsUpload.objects.get(uuid = document_uuid)
+            applicant = document.application
+            kyc = document.kyc
+            document.delete()
+                
+            # Logs
+            logged_user = User.objects.get(username=request.user.username)
+            api = 'DELETE api/v1/upload_document'
+            if applicant:
+                details = f'deleted document of {applicant}'
+            if kyc:
+                details = f'deleted document of {kyc}'
+            applicant = Applicants.objects.get(application_id = applicant) if applicant else None
+            UserLog.objects.create(
+                user=logged_user, 
+                api=api,
+                details=details, 
+                applicant_id=applicant.pk if applicant else None
+            )
+                    
+            return Response(
+                response_data(False, "Document deleted successfully"),
+                status=status.HTTP_200_OK,
+            )
+        
+        return Response(
+            response_data(True, "Document not found"),
+            status=status.HTTP_404_NOT_FOUND,
         )

@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from user_auth.models import User, Comments
+from user_auth.models import User, Comments, BankDetails
 from django.contrib.auth.models import Group, Permission
+
+from utils import generate_empID
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -12,6 +14,19 @@ class UserSerializer(serializers.ModelSerializer):
         representation = super(UserSerializer, self).to_representation(instance)
         representation['bank_branch'] = instance.bank_branch.bank_name
         return representation
+    
+    
+class BankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BankDetails
+        fields = '__all__'
+        
+    def to_representation(self, instance):
+        representation = super(BankDetailsSerializer, self).to_representation(instance)
+        if instance.comment:
+            representation['comment'] = instance.comment.comment
+        return representation
+
 
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,6 +58,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             "confirm_password",
             "email",
             "user_type",
+            "emp_id",
             "date_of_birth",
             "phone_number",
             "first_name",
@@ -59,6 +75,7 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("confirm_password")
+        validated_data['emp_id'] = generate_empID()
         user = User.objects.create_user(**validated_data)
         return user
 

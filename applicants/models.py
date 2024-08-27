@@ -11,13 +11,14 @@ from user_auth.models import Comments
 
 class Applicants(BaseModel):
     
-    application_id = models.CharField(max_length=255, default=generate_applicationID)
+    application_id = models.CharField(max_length=255, default=generate_applicationID, unique=True)
     lead = models.OneToOneField(Leads, on_delete=models.CASCADE, related_name='leads', null=True, blank=True)
     paymentedetails = models.OneToOneField(Payment, on_delete=models.CASCADE, related_name='paymentdetail')
     status = models.CharField(max_length=200, choices= Choices.APPLICATION_STATUS_CHOICES, default='ro_phase')
     description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
     created_by = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.application_id

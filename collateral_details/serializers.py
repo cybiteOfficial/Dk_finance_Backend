@@ -10,4 +10,6 @@ class CollateralDetailsSerializer(serializers.ModelSerializer):
         representation = super(CollateralDetailsSerializer, self).to_representation(instance)
         if instance.comment:    
             representation['comment'] = instance.comment.comment
+        if instance.applicant:
+            representation['applicant'] = instance.applicant.application_id            
         return representation

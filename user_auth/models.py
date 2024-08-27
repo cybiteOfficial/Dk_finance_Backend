@@ -7,6 +7,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 from validators import validate_otp_length
 from choices import Choices
 
+from utils import generate_empID
+
 class BaseModel(models.Model):
     class Meta:
         abstract = True
@@ -39,10 +41,10 @@ class BankDetails(BaseModel):
     country = models.CharField(max_length=100, default="India")
     state = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
-    pincode = models.CharField(max_length=20)
+    pincode = models.CharField(max_length=6)
     currency = models.CharField(max_length=10, default="INR")
-    description = models.TextField(null=True)
-    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True)
+    description = models.TextField(null=True, blank=True)
+    comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True, blank=True)
 
 
 class CustomUserManager(BaseUserManager):
@@ -70,6 +72,7 @@ class CustomUserManager(BaseUserManager):
 class User(BaseModel, AbstractUser, PersonDetails):
     
     username =  models.CharField(max_length=250, unique=True)
+    emp_id = models.CharField(default=generate_empID, null=True)
     email = models.EmailField(max_length=100, unique=True)
     user_type = models.CharField(max_length=250, choices=Choices.USER_TYPE_CHOICES)
     profile_picture = models.ImageField(

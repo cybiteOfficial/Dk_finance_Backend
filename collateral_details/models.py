@@ -31,7 +31,7 @@ class CollateralDetails(BaseModel):
     landmark = models.CharField(max_length=255, null=True, blank=True)
     estimatedPropertyValue = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     documentName = models.CharField(max_length=255, null=True, blank=True)
-    documentUpload = models.CharField(max_length=300, null=True, blank=True)
+    documentUpload = models.CharField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True, blank=True)
     isExisting = models.CharField(max_length=255, null=True, blank=True)

@@ -4,16 +4,17 @@ from applicants.models import Applicants
 from utils import generate_customerID
 from choices import Choices
 from user_auth.models import Comments
+from kyc.models import KYCDetails
 
 class CustomerDetails(BaseModel):
-    role = models.CharField(max_length=255, null=True, blank=True, default="applicant")
+    role = models.CharField(max_length=255, choices=Choices.CUSTOMER_ROLE_CHOICES, null=False)
     cif_id = models.CharField(max_length=255, default=generate_customerID, unique=True)
     applicant = models.ForeignKey(Applicants, on_delete=models.DO_NOTHING, related_name='applicant')
 
     # common for android and admin
     title = models.CharField(max_length=50, null=True, blank=True)
     firstName = models.CharField(max_length=255)
-    lastName = models.CharField(max_length=255)
+    lastName = models.CharField(max_length=255, null=True, blank=True)
     middle_name = models.CharField(max_length=30, null=True, blank=True)
     dateOfBirth = models.CharField()
     age = models.CharField(max_length=255)
@@ -35,12 +36,10 @@ class CustomerDetails(BaseModel):
     agriculturalLand = models.CharField(max_length=255, null=True, blank=True)
     valueOfAgriculturalLand = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     earningsFromAgriculturalLand = models.DecimalField(max_digits=20, decimal_places=2, null=True,blank=True )
-    educationQualification = models.CharField(255, null=True, blank=True)
+    educationQualification = models.CharField(max_length=255, null=True, blank=True)
     numberOfDependents = models.CharField(max_length=255,null=True, blank=True)
 
-    current_address = models.CharField(max_length=255, null=True, blank=True)
-    permanent_address = models.CharField(max_length=255,null=True, blank=True)
-    profile_photo = models.CharField(max_length=255, null=True, blank=True)
+    profile_photo = models.CharField(null=True, blank=True)      
     description = models.TextField(null=True, blank=True)
     comment = models.ForeignKey(Comments, on_delete=models.DO_NOTHING, null=True, blank=True)
 
@@ -64,3 +63,12 @@ class CustomerAddress(BaseModel):
     residence_type = models.CharField(max_length=255, null=True, blank=True)
     stability_at_residence = models.CharField(max_length=255, null=True, blank=True)
     distance_from_branch = models.CharField(max_length=255, null=True, blank=True)
+    
+class CustomerKYCDetails(BaseModel):
+    customer = models.ForeignKey(CustomerDetails, on_delete=models.DO_NOTHING)
+    aadhaar_num = models.CharField(max_length=12)
+    aadhaar_file = models.CharField()
+    pan_num = models.CharField(max_length=10)
+    pan_file = models.CharField()
+    is_verified = models.BooleanField(default=False)
+    
